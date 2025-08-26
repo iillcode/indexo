@@ -1,0 +1,55 @@
+{
+  "pathRules": [
+   
+    {
+      "pattern": "(?:^|/)app(?!/api)(?:/|$)",
+      "active": "/icons/folder-app-open.svg",
+      "inactive": "/icons/folder-app.svg"
+    },
+    {
+      "pattern": "(?:^|/)public(?:/|$)",
+      "active": "/icons/public-open.svg",
+      "inactive": "/icons/public.icon.svg"
+    },
+    {
+      "pattern": "(?:^|/)lib(?:/|$)",
+      "active": "/icons/folder-lib-open.svg",
+      "inactive": "/icons/folder-lib.svg"
+    },
+    {
+      "pattern": "(?:^|/)data(?:/|$)",
+      "active": "/icons/folder-database-open.svg",
+      "inactive": "/icons/folder-database.svg"
+    },
+    {
+      "pattern": "(?:^|/)api(?:/|$)",
+      "active": "/icons/folder-api-open.svg",
+      "inactive": "/icons/folder-api.svg"
+    },
+    {
+      "pattern": "(?:^|/).next(?:/|$)",
+      "active": "/icons/folder-next-open.svg",
+      "inactive": "/icons/folder-next.svg"
+    },
+    {
+      "pattern": "(?:^|/)context(?:/|$)",
+      "active": "/icons/folder-context-open.svg",
+      "inactive": "/icons/folder-context.svg"
+    },
+    {
+      "pattern": "(?:^|/)hooks(?:/|$)",
+      "active": "/icons/folder-hook-open.svg",
+      "inactive": "/icons/folder-hook.svg"
+    },
+     {
+      "pattern": "(?:^|/)components(?:/|$)",
+      "active": "/icons/folder-components-open.svg",
+      "inactive": "/icons/folder-components.svg"
+    },
+    {
+      "pattern": "(?:^|/)src(?:/|$)",
+      "active": "/icons/folder-src-open.svg",
+      "inactive": "/icons/folder-src.svg"
+    }
+  ]
+}
