@@ -1,6 +1,5 @@
 {
   "pathRules": [
-   
     {
       "pattern": "(?:^|/)app(?!/api)(?:/|$)",
       "active": "/icons/folder-app-open.svg",
@@ -31,6 +30,11 @@
       "active": "/icons/folder-next-open.svg",
       "inactive": "/icons/folder-next.svg"
     },
+     {
+      "pattern": "(?:^|/)assets(?:/|$)",
+      "active": "/icons/folder-favicon-open.svg",
+      "inactive": "/icons/folder-favicon.svg"
+    },
     {
       "pattern": "(?:^|/)context(?:/|$)",
       "active": "/icons/folder-context-open.svg",
@@ -41,7 +45,7 @@
       "active": "/icons/folder-hook-open.svg",
       "inactive": "/icons/folder-hook.svg"
     },
-     {
+    {
       "pattern": "(?:^|/)components(?:/|$)",
       "active": "/icons/folder-components-open.svg",
       "inactive": "/icons/folder-components.svg"

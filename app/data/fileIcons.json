@@ -53,6 +53,14 @@
   "pug": "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/pug/pug-original.svg",
   "h": "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/c/c-original.svg",
   "hpp": "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/cplusplus/cplusplus-original.svg",
-  "svg": "/icons/svg.svg"
+  "svg": "/icons/svg.svg",
+  "readme": "/icons/readme.svg",
+  "tsconfig": "/icons/tsconfig.svg",
+  "tailwindcss": "/icons/tailwindcss.svg",
+  "nextconfig": "/icons/nextconfig.svg",
+  "env": "/icons/env.svg",
+  "gitignore": "/icons/git.svg",
+  "postcss": "/icons/postcss.svg",
+  "vite": "/icons/vite.svg"
 
 }

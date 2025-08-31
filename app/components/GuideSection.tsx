@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { FileText } from "lucide-react";
+import { FileText, ScrollIcon } from "lucide-react";
 import { guideContent } from "../data/projectData";
 import fileIcons from "../data/fileIcons.json";
 import { Light as SyntaxHighlighter } from "react-syntax-highlighter";
@@ -164,12 +164,17 @@ export default function GuideSection({
           style={vs2015 as any}
           customStyle={{
             background: "#0f0f0f",
-            border: "1px solid rgb(75 85 99)",
+            // border: "1px solid rgb(75 85 99)",
             borderRadius: 6,
             padding: 12,
+            scrollbarWidth: "thin",
+            scrollbarColor: "#2e2d2d #0f0f0f",
+            border: "none",
           }}
           codeTagProps={{
-            className: `text-[12px] language-${rawLang || lang}`,
+            className: `text-[12px] language-${
+              rawLang || lang
+            } [&::-webkit-scrollbar]:h-[3px] [&::-webkit-scrollbar-track]:bg-gray-700 [&::-webkit-scrollbar-thumb]:bg-gray-500 [&::-webkit-scrollbar-thumb:hover]:bg-gray-400`,
           }}
           showLineNumbers={false}
         >

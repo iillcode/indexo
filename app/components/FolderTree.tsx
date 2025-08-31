@@ -62,7 +62,8 @@ const FileIcon = ({
   const byIcon = node.icon
     ? (fileIcons as Record<string, string>)[node.icon]
     : undefined;
-  const src = byExt || byIcon || "/file.svg";
+  // Prioritize projectData icon over extension-based detection
+  const src = byIcon || byExt || "/file.svg";
   return (
     <img src={src} alt={`${ext || nameLower} icon`} className={iconClass} />
   );

@@ -93,6 +93,7 @@ interface Tab {
   language: string;
   isModified?: boolean;
   source: "tree" | "guide";
+  icon?: string;
 }
 
 interface CodeSectionProps {
@@ -139,15 +140,19 @@ export default function CodeSection({
     renderValidationDecorations: "on" as const,
   };
 
-  const getFileIcon = (
-    fileName: string,
-    filePath?: string,
-    isActive?: boolean
-  ) => {
+  const getFileIcon = (tab: Tab, isActive?: boolean) => {
     const base = "w-3.5 h-3.5";
-    const nameLower = fileName.toLowerCase();
-    const ext = fileName.includes(".")
-      ? fileName.split(".").pop()!.toLowerCase()
+    // Use the icon from the tab if available, otherwise fall back to determining from file name
+    if (tab.icon) {
+      const src =
+        (fileIcons as Record<string, string>)[tab.icon] || "/file.svg";
+      return <img src={src} alt={`${tab.icon} icon`} className={base} />;
+    }
+
+    // Fallback to determining from file name if no icon in tab
+    const nameLower = tab.name.toLowerCase();
+    const ext = tab.name.includes(".")
+      ? tab.name.split(".").pop()!.toLowerCase()
       : "";
     const key = (ext || nameLower) as keyof typeof fileIcons;
     const src = (fileIcons as Record<string, string>)[key] || "/file.svg";
@@ -216,7 +221,7 @@ export default function CodeSection({
       {/* Tab Bar */}
       {tabs.length > 0 && (
         <div
-          className="tabbar flex whitespace-nowrap bg-[#1a1a1a] border-b border-x border-gray-700 divide-x divide-gray-700 overflow-x-auto overflow-y-hidden"
+          className="tabbar flex whitespace-nowrap bg-[#1a1a1a] border-b border-x border-gray-700 divide-x divide-gray-700 overflow-x-auto overflow-y-hidden shrink-0 relative z-10"
           ref={tabbarRef}
           role="tablist"
           aria-label="Open files"
@@ -237,9 +242,7 @@ export default function CodeSection({
               tabIndex={activeTabId === tab.id ? 0 : -1}
               onClick={() => onTabSelect(tab.id)}
             >
-              <span className="flex items-center">
-                {getFileIcon(tab.name, tab.path, activeTabId === tab.id)}
-              </span>
+              <span className="flex items-center">{getFileIcon(tab)}</span>
               <span className="text-xs font-mono truncate" title={tab.name}>
                 {tab.name}
               </span>
@@ -258,7 +261,7 @@ export default function CodeSection({
       )}
 
       {/* Editor */}
-      <div className="flex-1">
+      <div className="flex-1 min-h-0">
         {content ? (
           <Editor
             height="100%"
