@@ -7,6 +7,9 @@ import {
   ChevronRight,
   Book,
   FileText,
+  Menu,
+  X,
+  User,
 } from "lucide-react";
 
 interface Topic {
@@ -25,6 +28,8 @@ interface Category {
 interface TutorialNavigationProps {
   onTopicSelect: (topicId: string) => void;
   selectedTopic: string | null;
+  isCollapsed: boolean;
+  onToggleCollapse: () => void;
 }
 
 // Sample tutorial data - replace with your actual data structure
@@ -196,6 +201,8 @@ const tutorialCategories: Category[] = [
 export default function TutorialNavigation({
   onTopicSelect,
   selectedTopic,
+  isCollapsed,
+  onToggleCollapse,
 }: TutorialNavigationProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [categories, setCategories] = useState<Category[]>(tutorialCategories);
@@ -242,82 +249,159 @@ export default function TutorialNavigation({
   };
 
   return (
-    <div className="h-full bg-[#101010] flex flex-col overflow-hidden pl-6">
-      {/* Search Bar */}
-      <div className="p-5  ">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-          <input
-            type="text"
-            placeholder="Quick search..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-[#2a2a2a] border border-gray-600 rounded-md pl-10 pr-4 py-2 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-          <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-gray-500">
-            Ctrl K
-          </span>
+    <div
+      className={`h-full bg-[#111111] flex flex-col overflow-hidden transition-all duration-300 ease-in-out border-r border-[#101010]/10 ${
+        isCollapsed ? "w-16" : "w-full"
+      }`}
+    >
+      {/* Header with Toggle Button */}
+      <div className="px-3 pt-2 flex items-center justify-between sticky top-0 z-10 bg-[#111111]">
+        <div
+          className={`flex flex-row items-center gap-2 text-2xl font-bold text-white transition-all duration-300 ${
+            isCollapsed ? "opacity-0 w-0 overflow-hidden" : "opacity-100"
+          }`}
+        >
+          <img className="h-10 w-10" src="/icons/react_ts.svg" alt="" />
+          <p>Indexo</p>
         </div>
+
+        {/* Toggle Button */}
+        <button
+          onClick={onToggleCollapse}
+          className={`p-2 rounded-md hover:bg-gray-700/20 transition-colors duration-200 ${
+            isCollapsed ? "mx-auto" : ""
+          }`}
+          aria-label="Toggle navigation"
+        >
+          {isCollapsed ? (
+            <Menu className="h-5 w-5 text-white" />
+          ) : (
+            <X className="h-5 w-5 text-white" />
+          )}
+        </button>
       </div>
+      {/* Search Bar with Shadow Effect */}
+      {!isCollapsed && (
+        <div className="px-3 pt-2 pb-2 sticky top-14 z-10 bg-[#111111]">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 z-20" />
+            <input
+              type="text"
+              placeholder="Quick search..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-[#1a1a1a] border border-gray-700 rounded-md pl-12 pr-4 py-2 text-sm text-white placeholder-gray-400 focus:outline-none backdrop-blur-sm"
+            />
+            <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-gray-400">
+              Ctrl K
+            </span>
+          </div>
+          {/* Shadow fade effect */}
+          <div className="h-4 bg-gradient-to-b from-[#111111] to-transparent w-full absolute left-0 bottom-0 translate-y-full pointer-events-none"></div>
+        </div>
+      )}
 
       {/* Navigation Tree */}
-      <div className="flex-1 overflow-y-auto p-4">
-        <div className="space-y-1">
-          {filteredCategories.map((category) => (
-            <div key={category.id} className="select-none">
-              {/* Category Header */}
-              <button
-                onClick={() => toggleCategory(category.id)}
-                className="w-full flex items-center gap-2  py-2 text-sm font-medium text-gray-200  rounded transition-colors duration-150"
-              >
-                {category.expanded ? (
-                  <ChevronDown className="w-4 h-4 text-gray-400" />
-                ) : (
-                  <ChevronRight className="w-4 h-4 text-gray-400" />
-                )}
-                <span className="text-white">{category.title}</span>
-              </button>
+      <div className="flex-1 overflow-y-auto scrollbar-hide px-2">
+        {!isCollapsed ? (
+          <div className="space-y-1 py-2">
+            {filteredCategories.map((category) => (
+              <div key={category.id} className="select-none">
+                {/* Category Header */}
+                <button
+                  onClick={() => toggleCategory(category.id)}
+                  className="w-full flex items-center gap-2 py-2 text-sm font-medium text-gray-200 rounded transition-colors duration-150 hover:bg-gray-700/20"
+                >
+                  {category.expanded ? (
+                    <ChevronDown className="w-4 h-4 text-gray-400" />
+                  ) : (
+                    <ChevronRight className="w-4 h-4 text-gray-400" />
+                  )}
+                  <span className="text-white">{category.title}</span>
+                </button>
 
-              {/* Topics */}
-              {(category.expanded || searchTerm) && (
-                <div className="ml-[7px] mt-1 space-y-1">
-                  {category.topics.map((topic) => (
-                    <div key={topic.id} className="relative group ">
-                      <button
-                        onClick={() => handleTopicClick(topic.id)}
-                        className={`w-full flex items-center gap-2 px-2 py-1.5 text-sm text-left transition-colors duration-150 relative ${
-                          selectedTopic === topic.id
-                            ? "text-blue-400 font-medium"
-                            : "text-gray-300 hover:text-white"
-                        }`}
-                      >
-                        {/* <FileText className="w-4 h-4 text-gray-400" /> */}
-                        <span
-                          className={`pl-2 ${
+                {/* Topics */}
+                {(category.expanded || searchTerm) && (
+                  <div className="ml-[7px] mt-1 space-y-1 relative">
+                    {/* Vertical connecting line that runs through all topics */}
+                    <div className="absolute left-0 top-2 bottom-2 w-0.5 bg-gray-700"></div>
+
+                    {category.topics.map((topic) => (
+                      <div key={topic.id} className="relative group">
+                        <button
+                          onClick={() => handleTopicClick(topic.id)}
+                          className={`w-full flex items-center gap-2 px-2 py-1.5 text-sm text-left transition-colors duration-150 relative rounded-md ${
                             selectedTopic === topic.id
-                              ? "text-blue-400 font-medium"
-                              : "text-gray-200 hover:text-white"
+                              ? "text-orange-400 font-medium "
+                              : "text-gray-300 hover:text-orange-200 "
                           }`}
                         >
-                          {topic.title}
-                        </span>
-                      </button>
+                          <span
+                            className={`pl-2 ${
+                              selectedTopic === topic.id
+                                ? "text-orange-400 font-medium"
+                                : "text-gray-200 hover:text-orange-200"
+                            }`}
+                          >
+                            {topic.title}
+                          </span>
+                        </button>
 
-                      {/* Thin vertical line indicator */}
-                      <div
-                        className={`absolute left-0 top-0 bottom-0 w-0.5 transition-all duration-200 ${
-                          selectedTopic === topic.id
-                            ? "bg-blue-400"
-                            : "bg-transparent group-hover:bg-gray-500"
-                        }`}
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
+                        {/* Thin vertical line indicator */}
+                        <div
+                          className={`absolute left-0 top-0 bottom-0 w-0.5 transition-all duration-200 rounded-r ${
+                            selectedTopic === topic.id
+                              ? "bg-orange-400"
+                              : "bg-transparent group-hover:bg-gray-500"
+                          }`}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          /* Collapsed Navigation - Show only icons */
+          <div className="space-y-2 py-4">
+            {tutorialCategories.map((category) => (
+              <div
+                key={category.id}
+                className="flex justify-center"
+                title={category.title}
+              >
+                <button
+                  onClick={() => toggleCategory(category.id)}
+                  className="p-2 rounded-md hover:bg-orange-500/20 transition-colors duration-200"
+                >
+                  {/* Removed FileText icon to clean up collapsed view */}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Profile Section */}
+      <div className={` p-3 ${isCollapsed ? "flex justify-center" : ""}`}>
+        {!isCollapsed ? (
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center">
+              <User className="w-4 h-4 text-white" />
             </div>
-          ))}
-        </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-white truncate">
+                John Doe
+              </p>
+              <p className="text-xs text-gray-400 truncate">john@example.com</p>
+            </div>
+          </div>
+        ) : (
+          <button className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center hover:bg-gray-600 transition-colors duration-200">
+            <User className="w-4 h-4 text-white" />
+          </button>
+        )}
       </div>
     </div>
   );

@@ -1,17 +1,4 @@
-import {
-  Shield,
-  BarChart3,
-  Rocket,
-  Terminal,
-  Paintbrush,
-  Cpu,
-  Zap,
-  Globe,
-  Lock,
-  Smartphone,
-  Database,
-  Cloud,
-} from "lucide-react";
+import { Shield } from "lucide-react";
 import { Feature, iconMap } from "@/app/data/featureSectionData";
 
 interface FeatureProps {

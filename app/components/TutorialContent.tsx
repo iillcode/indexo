@@ -23,7 +23,7 @@ SyntaxHighlighter.registerLanguage("html", xml);
 SyntaxHighlighter.registerLanguage("bash", bash);
 SyntaxHighlighter.registerLanguage("css", css);
 SyntaxHighlighter.registerLanguage("json", json);
-SyntaxHighlighter.registerLanguage("markdown", markdown);
+SyntaxHighlighter.registerLanguage("markup", markdown);
 SyntaxHighlighter.registerLanguage("yaml", yaml);
 
 interface TutorialContentProps {
@@ -85,7 +85,7 @@ export default function TutorialContent({
         nodes.push(
           <code
             key={`${keyBase}-code-${start}`}
-            className="px-1 py-0.5 rounded bg-gray-800 text-blue-200 font-mono text-[12px]"
+            className="px-1 py-0.5 rounded bg-orange-900/50 text-orange-200 font-mono text-[12px] border border-orange-500/30"
           >
             {val}
           </code>
@@ -96,7 +96,7 @@ export default function TutorialContent({
         nodes.push(
           <strong
             key={`${keyBase}-bold-${start}`}
-            className="text-white font-semibold"
+            className="text-orange-200 font-semibold"
           >
             {full.slice(2, -2)}
           </strong>
@@ -105,7 +105,7 @@ export default function TutorialContent({
       // 3: *italic*
       else if (match[3]) {
         nodes.push(
-          <em key={`${keyBase}-em-${start}`} className="text-gray-200">
+          <em key={`${keyBase}-em-${start}`} className="text-orange-300/80">
             {full.slice(1, -1)}
           </em>
         );
@@ -159,16 +159,15 @@ export default function TutorialContent({
             {code}
           </SyntaxHighlighter>
 
-          {/* Copy Button */}
           <button
             onClick={() => copyCode(code, blockId)}
-            className="absolute top-2 right-2 p-2 rounded transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+            className="absolute top-2 right-2 p-2 rounded-md bg-orange-500/20 hover:bg-orange-500/30 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
             title={isCopied ? "Copied!" : "Copy code"}
           >
             {isCopied ? (
               <Check className="w-4 h-4 text-green-400" />
             ) : (
-              <Copy className="w-4 h-4 text-gray-300" />
+              <Copy className="w-4 h-4 text-orange-300" />
             )}
           </button>
         </div>
@@ -193,7 +192,7 @@ export default function TutorialContent({
         nodes.push(
           <ul
             key={`ul-${keyBase}-${nodes.length}`}
-            className="list-disc pl-5 text-sm text-gray-300 space-y-1"
+            className="list-disc pl-5 text-base text-white space-y-1"
           >
             {listItems}
           </ul>
@@ -211,12 +210,12 @@ export default function TutorialContent({
         const level = headingMatch[1].length;
         const text = headingMatch[2];
         const sizeClasses = {
-          1: "text-2xl font-bold text-white mb-4",
-          2: "text-xl font-semibold text-white mb-3",
-          3: "text-lg font-medium text-white mb-2",
-          4: "text-md font-medium text-white mb-2",
-          5: "text-sm font-medium text-white mb-1",
-          6: "text-sm font-medium text-white mb-1",
+          1: "text-3xl font-bold text-white mb-4",
+          2: "text-2xl font-semibold text-white mb-3",
+          3: "text-xl font-medium text-white mb-2",
+          4: "text-lg font-medium text-white mb-2",
+          5: "text-base font-medium text-white mb-1",
+          6: "text-base font-medium text-white mb-1",
         };
 
         const className = sizeClasses[level as keyof typeof sizeClasses];
@@ -274,7 +273,7 @@ export default function TutorialContent({
         nodes.push(
           <p
             key={`p-${keyBase}-${i}`}
-            className="text-sm text-gray-300 leading-6"
+            className="text-base text-white leading-6"
           >
             {renderInline(ln, `p-${keyBase}-${i}`)}
           </p>
@@ -293,32 +292,33 @@ export default function TutorialContent({
   };
 
   return (
-    <div className="h-full bg-[#1a1a1a] flex flex-col overflow-hidden">
-      <div className="flex-1 overflow-y-auto">
+    <div className="h-full bg-gradient-to-br from-black to-orange-700/10 flex flex-col overflow-hidden relative">
+      {/* Orange gradient overlay with reduced opacity on left side */}
+      <div className="flex-1 overflow-y-auto pl-10 py-8">
         <div className="p-6 w-[70%]">
           {selectedTopic ? (
             <>
               <div className="flex items-center gap-2 mb-4">
-                <FileText className="w-5 h-5 text-yellow-400" />
-                <h2 className="text-xl font-semibold text-white">
+                <FileText className="w-5 h-5 text-orange-400" />
+                <h2 className="text-2xl font-semibold text-white">
                   {formatTopicTitle(selectedTopic)}
                 </h2>
               </div>
               {content ? (
                 renderContent(content)
               ) : (
-                <div className="text-sm text-gray-300">
+                <div className="text-base text-white">
                   Tutorial content for this topic is coming soon.
                 </div>
               )}
             </>
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-center">
-              <FileText className="w-16 h-16 text-gray-600 mb-4" />
-              <h3 className="text-lg font-medium text-gray-400 mb-2">
+              <FileText className="w-16 h-16 text-orange-400/30 mb-4" />
+              <h3 className="text-xl font-medium text-white mb-2">
                 Welcome to Tutorials
               </h3>
-              <p className="text-sm text-gray-500 max-w-md">
+              <p className="text-base text-white max-w-md">
                 Select a topic from the navigation on the left to start
                 learning. Explore categories like Layout, Flexbox & Grid,
                 Typography, and more.

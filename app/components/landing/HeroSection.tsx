@@ -1,13 +1,17 @@
 "use client";
+"use client";
 import React from "react";
-import { Mail, SendHorizonal, Menu, X } from "lucide-react";
+import { Mail, SendHorizonal, Menu, X, LogOut, User } from "lucide-react";
 import { Button } from "@/app/components/landing/Buttons";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { InfiniteSlider } from "@/app/components/landing/InfiniteSlide";
 import { ProgressiveBlur } from "@/app/components/landing/PograssiceBlur";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function HeroSection() {
+  const { user, loading } = useAuth();
+
   return (
     <>
       <HeroHeader />
@@ -37,28 +41,46 @@ export function HeroSection() {
                       The utlimate boilerplate for building production-ready
                       Next.js apps in Hours. Only use the features you need.
                     </p>
-                    {/* <form action="" className=" max-w-sm">
-                      <div className="bg-background has-[input:focus]:ring-muted relative grid grid-cols-[1fr_auto] pr-1.5 items-center rounded-[1rem] border shadow shadow-zinc-950/5 has-[input:focus]:ring-2 lg:pr-0">
-                        <Mail className="pointer-events-none absolute inset-y-0 left-4 my-auto size-4" />
-                        <input
-                          placeholder="Your mail address"
-                          className="h-12 w-full bg-transparent pl-12 focus:outline-none"
-                          type="email"
-                        />
-                      </div>
-                    </form> */}
                     <div className="md:pr-1.5 lg:pr-1.5 mt-12">
-                      <Button
-                        aria-label="submit"
-                        size="lg"
-                        className="rounded-[0.5rem] bg-gradient-to-b from-orange-500 to-orange-600 text-white shadow-[0_10px_25px_rgba(255,115,0,0.3)] hover:from-orange-600 hover:to-orange-700"
-                      >
-                        <span className="hidden md:block">Get Started</span>
-                        <SendHorizonal
-                          className="relative mx-auto size-5 md:hidden"
-                          strokeWidth={2}
-                        />
-                      </Button>
+                      {loading ? (
+                        <Button
+                          size="lg"
+                          className="rounded-[0.5rem] bg-gradient-to-b from-orange-500 to-orange-600 text-white shadow-[0_10px_25px_rgba(255,115,0,0.3)] hover:from-orange-600 hover:to-orange-700"
+                          disabled
+                        >
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                        </Button>
+                      ) : user ? (
+                        <Button
+                          asChild
+                          size="lg"
+                          className="rounded-[0.5rem] bg-gradient-to-b from-orange-500 to-orange-600 text-white shadow-[0_10px_25px_rgba(255,115,0,0.3)] hover:from-orange-600 hover:to-orange-700"
+                        >
+                          <Link href="/docs">
+                            <span className="hidden md:block">
+                              Go to Dashboard
+                            </span>
+                            <SendHorizonal
+                              className="relative mx-auto size-5 md:hidden"
+                              strokeWidth={2}
+                            />
+                          </Link>
+                        </Button>
+                      ) : (
+                        <Button
+                          aria-label="submit"
+                          size="lg"
+                          className="rounded-[0.5rem] bg-gradient-to-b from-orange-500 to-orange-600 text-white shadow-[0_10px_25px_rgba(255,115,0,0.3)] hover:from-orange-600 hover:to-orange-700"
+                        >
+                          <a href="#pricing" className="hidden md:block">
+                            Get Started
+                          </a>
+                          <SendHorizonal
+                            className="relative mx-auto size-5 md:hidden"
+                            strokeWidth={2}
+                          />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -69,16 +91,11 @@ export function HeroSection() {
                     aria-hidden
                     className="bg-radial from-primary/50 dark:from-primary/25 relative max-w-2xl to-transparent to-55% text-left"
                   >
-                    <div className="bg-background border-border/50 absolute inset-0 mx-auto w-80 -translate-x-3 -translate-y-12 rounded-[2rem] border p-2 [mask-image:linear-gradient(to_bottom,#000_50%,transparent_90%)] sm:-translate-x-6">
-                      <div className="relative h-96 overflow-hidden rounded-[1.5rem] border p-2 pb-12 before:absolute before:inset-0 before:bg-[repeating-linear-gradient(-45deg,var(--border),var(--border)_1px,transparent_1px,transparent_6px)] before:opacity-50"></div>
-                    </div>
-                    <div className="bg-muted dark:bg-background/50 border-border/50 mx-auto w-80 translate-x-4 rounded-[2rem] border p-2 backdrop-blur-3xl [mask-image:linear-gradient(to_bottom,#000_50%,transparent_90%)] sm:translate-x-8">
-                      <div className="bg-background space-y-2 overflow-hidden rounded-[1.5rem] border p-2 shadow-xl dark:bg-white/5 dark:shadow-black dark:backdrop-blur-3xl">
-                        <AppComponent />
-                        <div className="bg-muted rounded-[1rem] p-4 pb-16 dark:bg-white/5"></div>
+                    <div className="bg-black border-border/50 mx-auto w-[500px] translate-x-4 rounded-[2rem] border p-2 backdrop-blur-3xl [mask-image:radial-gradient(ellipse_at_top,rgba(0,0,0,0.9)_30%,rgba(0,0,0,0.7)_60%,transparent_90%)] sm:translate-x-8">
+                      <div className="bg-black space-y-2 overflow-hidden rounded-[1.5rem] border p-2 shadow-xl relative z-10">
+                        <TerminalPreview />
                       </div>
                     </div>
-                    <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] mix-blend-overlay [background-size:16px_16px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)] dark:opacity-5" />
                   </div>
                 </div>
               </div>
@@ -90,6 +107,207 @@ export function HeroSection() {
     </>
   );
 }
+
+const TerminalPreview = () => {
+  const [currentStep, setCurrentStep] = React.useState(0);
+  const [currentText, setCurrentText] = React.useState("");
+  const [showImage, setShowImage] = React.useState(false);
+  const terminalContentRef = React.useRef<HTMLDivElement>(null);
+
+  const terminalSteps = [
+    {
+      text: "> git clone https://github.com/indie-kit/indie-kit",
+      color: "text-green-400",
+      delay: 100,
+    },
+    {
+      text: "Cloning into 'indie-kit'...",
+      color: "text-gray-300",
+      delay: 50,
+    },
+    {
+      text: "remote: Enumerating objects: 1247, done.",
+      color: "text-gray-300",
+      delay: 30,
+    },
+    {
+      text: "remote: Counting objects: 100% (1247/1247), done.",
+      color: "text-gray-300",
+      delay: 30,
+    },
+    {
+      text: "remote: Compressing objects: 100% (892/892), done.",
+      color: "text-gray-300",
+      delay: 30,
+    },
+    {
+      text: "Receiving objects: 100% (1247/1247), 2.34 MiB | 1.52 MiB/s, done.",
+      color: "text-green-400",
+      delay: 50,
+    },
+    {
+      text: "Resolving deltas: 100% (567/567), done.",
+      color: "text-green-400",
+      delay: 50,
+    },
+    {
+      text: "> cd indie-kit && pnpm install",
+      color: "text-green-400",
+      delay: 100,
+    },
+    {
+      text: "Lockfile is up to date, resolution step is skipped",
+      color: "text-gray-300",
+      delay: 30,
+    },
+    {
+      text: "Already up to date",
+      color: "text-gray-300",
+      delay: 30,
+    },
+    {
+      text: "Progress: resolved 847, reused 847, downloaded 0, added 847",
+      color: "text-gray-300",
+      delay: 30,
+    },
+    {
+      text: "✓ Dependencies installed successfully",
+      color: "text-green-400",
+      delay: 50,
+    },
+    {
+      text: "Done in 3.2s",
+      color: "text-green-400",
+      delay: 50,
+    },
+    {
+      text: "> pnpm run dev",
+      color: "text-green-400",
+      delay: 100,
+    },
+    {
+      text: "> indie-kit@1.0.0 dev",
+      color: "text-gray-300",
+      delay: 50,
+    },
+    {
+      text: "> next dev",
+      color: "text-gray-300",
+      delay: 50,
+    },
+    {
+      text: "✓ Ready - started server on 0.0.0.0:3000",
+      color: "text-green-400",
+      delay: 50,
+    },
+    {
+      text: "✓ Local: http://localhost:3000",
+      color: "text-green-400",
+      delay: 50,
+    },
+    {
+      text: "✓ Compiled successfully",
+      color: "text-green-400",
+      delay: 50,
+    },
+    {
+      text: "# TODO: Make changes here - customize your app! 🚀",
+      color: "text-yellow-400",
+      delay: 100,
+    },
+  ];
+
+  // Auto-scroll to bottom when new content is added
+  React.useEffect(() => {
+    if (terminalContentRef.current) {
+      terminalContentRef.current.scrollTop =
+        terminalContentRef.current.scrollHeight;
+    }
+  }, [currentStep, currentText]);
+
+  React.useEffect(() => {
+    if (currentStep < terminalSteps.length) {
+      const step = terminalSteps[currentStep];
+      let charIndex = 0;
+
+      const typeInterval = setInterval(() => {
+        if (charIndex < step.text.length) {
+          setCurrentText(step.text.slice(0, charIndex + 1));
+          charIndex++;
+        } else {
+          clearInterval(typeInterval);
+          setTimeout(() => {
+            setCurrentStep((prev) => prev + 1);
+            setCurrentText("");
+          }, step.delay * 10);
+        }
+      }, step.delay);
+
+      return () => clearInterval(typeInterval);
+    } else {
+      // All steps completed, show image after a delay
+      setTimeout(() => {
+        setShowImage(true);
+      }, 1000);
+    }
+  }, [currentStep]);
+
+  if (showImage) {
+    return (
+      <div className="relative h-72 rounded-[1rem] bg-black p-4 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-3 rounded-lg font-semibold text-lg">
+            🚀 Indie Kit Ready!
+          </div>
+          <div className="text-gray-300 text-sm">
+            Your Next.js app is running at localhost:3000
+          </div>
+          <div className="flex items-center justify-center space-x-2">
+            <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+            <span className="text-green-400 text-sm">Live & Ready</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative h-72 rounded-[1rem] bg-black p-4 font-mono text-sm overflow-hidden">
+      {/* Terminal header */}
+      <div className="flex items-center gap-2 mb-4 border-b border-gray-800 pb-2">
+        <div className="flex gap-1.5">
+          <div className="w-3 h-3 rounded-full bg-red-500"></div>
+          <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+          <div className="w-3 h-3 rounded-full bg-green-500"></div>
+        </div>
+        <span className="text-gray-400 text-xs ml-2">Terminal</span>
+      </div>
+
+      {/* Terminal content with hidden scrollbar and auto-scroll */}
+      <div
+        ref={terminalContentRef}
+        className="space-y-1 h-56 overflow-y-auto scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+        style={{ scrollBehavior: "smooth" }}
+      >
+        {terminalSteps.slice(0, currentStep).map((step, index) => (
+          <div key={index} className={`${step.color} leading-relaxed`}>
+            {step.text}
+          </div>
+        ))}
+        {currentStep < terminalSteps.length && (
+          <div
+            className={`${
+              terminalSteps[currentStep]?.color || "text-green-400"
+            } leading-relaxed`}
+          >
+            {currentText}
+            <span className="animate-pulse">|</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 const AppComponent = () => {
   return (
@@ -156,6 +374,7 @@ const menuItems = [
 const HeroHeader = () => {
   const [menuState, setMenuState] = React.useState(false);
   const [isScrolled, setIsScrolled] = React.useState(false);
+  const { user, profile, signOut, loading } = useAuth();
 
   React.useEffect(() => {
     const handleScroll = () => {
@@ -280,43 +499,154 @@ const HeroHeader = () => {
                       </a>
                     </li>
                   ))}
+                  {/* Mobile menu user buttons */}
+                  {user && (
+                    <>
+                      <li>
+                        <button
+                          onClick={() => {
+                            setMenuState(false);
+                            // Handle profile navigation
+                          }}
+                          className="text-muted-foreground hover:text-accent-foreground flex items-center space-x-2 duration-150 cursor-pointer"
+                        >
+                          <User className="w-4 h-4" />
+                          <span>
+                            {profile?.full_name ||
+                              user.email?.split("@")[0] ||
+                              "Profile"}
+                          </span>
+                        </button>
+                      </li>
+                      <li>
+                        <button
+                          onClick={async () => {
+                            setMenuState(false);
+                            await signOut();
+                            window.location.reload();
+                          }}
+                          className="text-red-600 hover:text-red-700 flex items-center space-x-2 duration-150 cursor-pointer"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          <span>Logout</span>
+                        </button>
+                      </li>
+                    </>
+                  )}
                 </ul>
               </div>
               <div className="flex w-full flex-col space-y-3 sm:flex-row sm:gap-3 sm:space-y-0 md:w-fit">
-                <Button
-                  asChild
-                  variant="outline"
-                  size="sm"
-                  className={cn(isScrolled && "lg:hidden")}
-                >
-                  <Link href="#">
-                    <span>Login</span>
-                  </Link>
-                </Button>
-                <Button
-                  asChild
-                  size="sm"
-                  className={cn(
-                    isScrolled && "lg:hidden",
-                    "bg-gradient-to-b from-orange-500 to-orange-600 text-white shadow-[0_10px_25px_rgba(255,115,0,0.3)] hover:from-orange-600 hover:to-orange-700"
-                  )}
-                >
-                  <Link href="#">
-                    <span>Sign Up</span>
-                  </Link>
-                </Button>
-                <Button
-                  asChild
-                  size="sm"
-                  className={cn(
-                    isScrolled ? "lg:inline-flex" : "hidden",
-                    "bg-gradient-to-b from-orange-500 to-orange-600 text-white shadow-[0_10px_25px_rgba(255,115,0,0.3)] hover:from-orange-600 hover:to-orange-700"
-                  )}
-                >
-                  <Link href="#">
-                    <span>Get Started</span>
-                  </Link>
-                </Button>
+                {loading ? (
+                  // Loading state
+                  <div className="flex items-center space-x-2">
+                    <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+                  </div>
+                ) : user ? (
+                  // Authenticated user buttons
+                  <>
+                    <span
+                      className={cn(
+                        "flex items-center space-x-2",
+                        isScrolled && "lg:hidden"
+                      )}
+                      onClick={() => {
+                        /* Handle profile navigation */
+                      }}
+                    >
+                      <User className="w-4 h-4" />
+                      <span>
+                        {profile?.full_name?.split(" ")[0] ||
+                          user.email?.split("@")[0] ||
+                          "User"}
+                      </span>
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className={cn(
+                        "flex items-center space-x-2 bg-gradient-to-b from-orange-500 to-orange-600 text-white  hover:from-orange-600 hover:to-orange-700",
+                        isScrolled && "lg:hidden"
+                      )}
+                      onClick={async () => {
+                        await signOut();
+                        window.location.reload();
+                      }}
+                    >
+                      <LogOut className="w-4 h-4" />
+                      <span>Logout</span>
+                    </Button>
+                    {/* Scrolled state user buttons */}
+                    <span
+                      className={cn(
+                        "flex items-center space-x-2",
+                        isScrolled ? "lg:inline-flex" : "hidden"
+                      )}
+                      onClick={() => {
+                        /* Handle profile navigation */
+                      }}
+                    >
+                      <User className="w-4 h-4" />
+                      <span>
+                        {profile?.full_name?.split(" ")[0] ||
+                          user.email?.split("@")[0] ||
+                          "User"}
+                      </span>
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className={cn(
+                        "flex items-center space-x-2 bg-gradient-to-b from-orange-500 to-orange-600 text-white  hover:from-orange-600 hover:to-orange-700",
+                        isScrolled ? "lg:inline-flex" : "hidden"
+                      )}
+                      onClick={async () => {
+                        await signOut();
+                        window.location.reload();
+                      }}
+                    >
+                      <LogOut className="w-4 h-4" />
+                      <span>Logout</span>
+                    </Button>
+                  </>
+                ) : (
+                  // Unauthenticated user buttons
+                  <>
+                    <Button
+                      asChild
+                      variant="outline"
+                      size="sm"
+                      className={cn(isScrolled && "lg:hidden")}
+                    >
+                      <Link href="/auth/login">
+                        <span>Login</span>
+                      </Link>
+                    </Button>
+                    <Button
+                      asChild
+                      size="sm"
+                      className={cn(
+                        isScrolled && "lg:hidden",
+                        "bg-gradient-to-b from-orange-500 to-orange-600 text-white shadow-[0_10px_25px_rgba(255,115,0,0.3)] hover:from-orange-600 hover:to-orange-700"
+                      )}
+                    >
+                      <Link href="/auth/register">
+                        <span>Sign Up</span>
+                      </Link>
+                    </Button>
+                    <Button
+                      asChild
+                      size="sm"
+                      className={cn(
+                        isScrolled ? "lg:inline-flex" : "hidden",
+                        "bg-gradient-to-b from-orange-500 to-orange-600 text-white shadow-[0_10px_25px_rgba(255,115,0,0.3)] hover:from-orange-600 hover:to-orange-700"
+                      )}
+                    >
+                      <Link href="#pricing">
+                        <span>Get Started</span>
+                      </Link>
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </div>

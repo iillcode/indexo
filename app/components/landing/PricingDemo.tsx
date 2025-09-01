@@ -1,12 +1,72 @@
 "use client";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/app/components/landing/Buttons";
-import { CheckCircle2, XCircleIcon } from "lucide-react";
+import { CheckCircle2, XCircleIcon, Loader2, Crown } from "lucide-react";
+import {
+  LemonSqueezyService,
+  type LemonSqueezyProduct,
+} from "@/lib/lemonsqueezy";
+import { LEMONSQUEEZY_CONFIG } from "@/lib/lemonsqueezy-config";
+import { useAuth } from "@/contexts/AuthContext";
+import { usePaymentStatus, useCanMakePayment } from "@/hooks/usePaymentStatus";
 
 function PricingCardDemo() {
-  const handleClick = (plan: string) => {
-    alert(`Selected ${plan} plan!`);
+  const { user, profile } = useAuth();
+  const paymentStatus = usePaymentStatus();
+  const { canMakePayment, reason } = useCanMakePayment();
+  const [isLoading, setIsLoading] = useState(false);
+  const [product, setProduct] = useState<LemonSqueezyProduct | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  // LemonSqueezy Product ID - Replace with your actual product ID
+  const PRODUCT_ID = LEMONSQUEEZY_CONFIG.PRODUCT_ID;
+
+  // Load product details on component mount
+  useEffect(() => {
+    const loadProduct = async () => {
+      try {
+        setError(null);
+        const productData = await LemonSqueezyService.getProduct(PRODUCT_ID);
+        setProduct(productData);
+      } catch (err) {
+        console.error("Failed to load product:", err);
+        setError(err instanceof Error ? err.message : "Failed to load product");
+      }
+    };
+
+    loadProduct();
+  }, []);
+
+  const handleCheckout = async () => {
+    if (!product) {
+      setError("Product not loaded yet. Please try again.");
+      return;
+    }
+
+    // Check if user can make payment
+    if (!canMakePayment) {
+      setError(reason || "Unable to process payment at this time.");
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Create checkout request with user information
+      const checkoutRequest = {
+        productId: PRODUCT_ID,
+        userId: user?.id,
+        userEmail: user?.email || profile?.email,
+      };
+
+      await LemonSqueezyService.checkoutAndRedirect(checkoutRequest);
+    } catch (err) {
+      console.error("Checkout failed:", err);
+      setError(err instanceof Error ? err.message : "Checkout failed");
+      setIsLoading(false);
+    }
   };
 
   const features = [
@@ -49,13 +109,17 @@ function PricingCardDemo() {
         {/* Plan Info */}
         <div className="mb-6 text-center">
           <h3 className="text-2xl font-bold text-foreground mb-2">
-            Indie Kit{" "}
+            {product ? product.attributes.name : "Indie Kit"}{" "}
             <span className="text-muted-foreground font-normal">
               AI-optimised
             </span>
           </h3>
           <p className="text-muted-foreground text-sm">
-            Perfect Starter Kit for building B2C products
+            {product?.attributes.description
+              ? product.attributes.description
+                  .replace(/<[^>]*>/g, "")
+                  .substring(0, 100) + "..."
+              : "Perfect Starter Kit for building B2C products"}
           </p>
         </div>
 
@@ -63,7 +127,7 @@ function PricingCardDemo() {
         <div className="mb-4 text-center">
           <div className="flex items-end justify-center gap-2 mb-3">
             <span className="text-6xl font-bold tracking-tight text-foreground">
-              $79
+              {product ? product.attributes.price_formatted : "$79"}
             </span>
             <div className="flex flex-col items-start pb-1">
               <span className="text-muted-foreground text-sm line-through">
@@ -87,20 +151,70 @@ function PricingCardDemo() {
         </div>
 
         {/* Button */}
-        <Button
-          className={cn(
-            "w-full font-semibold text-white mb-3",
-            "bg-gradient-to-b from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-lg"
-          )}
-          onClick={() => handleClick("Indie Kit")}
-        >
-          Get Indexo
-        </Button>
+        {paymentStatus.isLoading ? (
+          <Button
+            className="w-full font-semibold text-white mb-3 opacity-70 cursor-not-allowed"
+            disabled
+          >
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Checking Status...
+          </Button>
+        ) : paymentStatus.isPaid ? (
+          <Button
+            className={cn(
+              "w-full font-semibold text-white mb-3",
+              "bg-gradient-to-b from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-lg"
+            )}
+            disabled
+          >
+            <Crown className="mr-2 h-4 w-4" />
+            {paymentStatus.tier === 'pro' ? 'Pro Member' : 'Paid Member'}
+          </Button>
+        ) : (
+          <Button
+            className={cn(
+              "w-full font-semibold text-white mb-3",
+              "bg-gradient-to-b from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-lg",
+              (isLoading || !canMakePayment) && "opacity-70 cursor-not-allowed"
+            )}
+            onClick={handleCheckout}
+            disabled={isLoading || !product || !canMakePayment}
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Processing...
+              </>
+            ) : !user ? (
+              "Login to Purchase"
+            ) : !canMakePayment ? (
+              "Already Purchased"
+            ) : (
+              "Get Indexo"
+            )}
+          </Button>
+        )}
 
-        {/* Limited offer text */}
-        <p className="text-center text-muted-foreground text-xs">
-          $270 off for the first 450 customers (16 left)
-        </p>
+        {/* Error Message */}
+        {error && (
+          <div className="mb-3 text-center text-red-500 text-xs">{error}</div>
+        )}
+
+        {/* Status Message */}
+        {paymentStatus.isPaid ? (
+          <p className="text-center text-green-500 text-xs">
+            ✓ You are a {paymentStatus.tier} member
+            {paymentStatus.provider && ` via ${paymentStatus.provider}`}
+          </p>
+        ) : !user ? (
+          <p className="text-center text-muted-foreground text-xs">
+            Please log in to make a purchase
+          </p>
+        ) : (
+          <p className="text-center text-muted-foreground text-xs">
+            $270 off for the first 450 customers (16 left)
+          </p>
+        )}
       </div>
 
       {/* Body */}

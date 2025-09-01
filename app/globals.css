@@ -45,6 +45,8 @@
 
 :root {
   --radius: 0.625rem;
+  --skeleton: oklch(0.922 0 0);
+  --btn-border: oklch(1 0 0 / 10%);
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
@@ -79,6 +81,8 @@
 }
 
 .dark {
+  --skeleton: oklch(0.269 0 0);
+  --btn-border: oklch(1 0 0 / 15%);
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
@@ -198,6 +202,27 @@ code[class*="language-"] {
 
 .tabbar::-webkit-scrollbar-corner {
   background: transparent !important;
+}
+
+@layer components {
+  .g-button {
+    @apply rounded-[var(--radius)] border;
+    border-color: var(--btn-border);
+  }
+
+  /* Hide scrollbar utility */
+  .scrollbar-hide {
+    /* Hide scrollbar for Chrome, Safari and Opera */
+    -webkit-scrollbar: none;
+
+    /* Hide scrollbar for IE, Edge and Firefox */
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 /* Hide start/end arrow buttons in WebKit scrollbars */

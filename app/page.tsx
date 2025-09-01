@@ -1,29 +1,14 @@
-"use client";
+import { createPageMetadata } from "@/lib/seo/metadata";
+import HomeRunder from "./components/home/RunderHome";
+import { Metadata } from "next";
 
-import { HeroSection } from "./components/landing/HeroSection";
-import RotatingGradient from "./components/landing/RotatingGradient";
-import Feature1 from "./components/landing/Feature";
-import PricingDemo from "./components/landing/PricingDemo";
-import { Footer7 } from "./components/landing/Footer";
-import { TabSection } from "./components/landing/TabSections";
-import { featureSectionsData } from "./data/featureSectionData";
+export const metadata: Metadata = createPageMetadata({
+  title: "Indexo - Next.js boilerplate",
+  description: "Next.js boilerplate with Supabase and Stripe integrations.",
+  path: "/",
+  keywords: ["next.js", "boilerplate", "supabase", "stripe", "saas"],
+});
 
 export default function Home() {
-  return (
-    <div className=" bg-[#101010] text-white flex flex-col">
-      <div className="flex-grow">
-        <HeroSection />
-        <TabSection />
-        {featureSectionsData.map((sectionData, index) => (
-          <RotatingGradient
-            key={sectionData.id}
-            data={sectionData}
-            isFirstSection={index === 0}
-          />
-        ))}
-        <PricingDemo />
-      </div>
-      <Footer7 />
-    </div>
-  );
+  return <HomeRunder></HomeRunder>;
 }
