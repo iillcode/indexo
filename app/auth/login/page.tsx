@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, ChangeEvent, FormEvent, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { AuthTabs } from "@/components/ui/modern-animated-sign-in";
 
@@ -25,13 +25,19 @@ export default function LoginPage() {
 
   const { signIn, signInWithGoogle, user, loading: authLoading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get("redirect");
 
-  // Redirect authenticated users to dashboard
+  // Redirect authenticated users to dashboard or specified redirect URL
   useEffect(() => {
     if (!authLoading && user) {
-      router.replace("/docs");
+      if (redirect) {
+        router.replace(redirect);
+      } else {
+        router.replace("/docs");
+      }
     }
-  }, [user, authLoading, router]);
+  }, [user, authLoading, router, redirect]);
 
   // Show loading during auth check or if redirecting
   if (authLoading) {
@@ -68,7 +74,7 @@ export default function LoginPage() {
 
     try {
       const { error } = await signIn(formData.email, formData.password);
-        console.log(error?.message);
+      console.log(error?.message);
       if (error) {
         setError({
           code: error.message.includes("Invalid login credentials")
@@ -77,7 +83,12 @@ export default function LoginPage() {
           message: error.message,
         });
       } else {
-        router.push("/docs"); // Redirect to docs or main app
+        // Redirect to the specified URL or default to docs
+        if (redirect) {
+          router.push(redirect);
+        } else {
+          router.push("/docs");
+        }
       }
     } catch (err) {
       setError({
@@ -144,7 +155,7 @@ export default function LoginPage() {
           formFields={formFields}
           goTo={goToRegister}
           handleSubmit={handleSubmit}
-                  onGoogleSignIn={handleGoogleSignIn}
+          onGoogleSignIn={handleGoogleSignIn}
         />
         {error && (
           <div className="mt-4 p-4 text-sm bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">

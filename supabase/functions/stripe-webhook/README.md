@@ -156,49 +156,6 @@ CREATE TABLE payments (
 );
 ```
 
-#### LemonSqueezy Orders Table
-
-```sql
-CREATE TABLE lemon_orders (
-  id UUID PRIMARY KEY,
-  user_id UUID,
-  order_id TEXT UNIQUE NOT NULL,
-  order_number BIGINT NOT NULL,
-  identifier TEXT UNIQUE NOT NULL,
-  store_id BIGINT NOT NULL,
-  customer_id BIGINT NOT NULL,
-  status TEXT NOT NULL,
-  currency TEXT NOT NULL,
-  total DECIMAL(10,2) NOT NULL,
-  subtotal DECIMAL(10,2) NOT NULL,
-  tax DECIMAL(10,2) DEFAULT 0,
-  tax_rate DECIMAL(5,4) DEFAULT 0,
-  tax_name TEXT,
-  tax_inclusive BOOLEAN DEFAULT FALSE,
-  discount_total DECIMAL(10,2) DEFAULT 0,
-  setup_fee DECIMAL(10,2) DEFAULT 0,
-  refunded BOOLEAN DEFAULT FALSE,
-  refunded_amount DECIMAL(10,2) DEFAULT 0,
-  refunded_at TIMESTAMP WITH TIME ZONE,
-  test_mode BOOLEAN DEFAULT FALSE,
-  currency_rate DECIMAL(12,8),
-  user_name TEXT,
-  user_email TEXT NOT NULL,
-  total_formatted TEXT,
-  subtotal_formatted TEXT,
-  tax_formatted TEXT,
-  discount_formatted TEXT,
-  setup_fee_formatted TEXT,
-  refunded_amount_formatted TEXT,
-  receipt_url TEXT,
-  first_order_item JSONB,
-  relationships JSONB,
-  metadata JSONB DEFAULT '{}',
-  created_at TIMESTAMP WITH TIME ZONE,
-  updated_at TIMESTAMP WITH TIME ZONE
-);
-```
-
 #### Subscriptions Table
 
 ```sql
@@ -240,9 +197,6 @@ SELECT * FROM payments WHERE user_id = auth.uid();
 
 -- Get user's subscriptions
 SELECT * FROM subscriptions WHERE user_id = auth.uid();
-
--- Get LemonSqueezy specific order data
-SELECT * FROM lemon_orders WHERE user_id = auth.uid();
 
 -- Filter by provider
 SELECT * FROM payments WHERE provider = 'lemonsqueezy' AND user_id = auth.uid();
@@ -287,4 +241,4 @@ Monitor webhook activity through:
 - Supabase function logs
 - Stripe webhook dashboard
 - LemonSqueezy webhook logs
-- Database records in payments/subscriptions/lemon_orders tables
+- Database records in payments/subscriptions tables

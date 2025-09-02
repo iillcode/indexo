@@ -39,25 +39,13 @@ const tutorialCategories: Category[] = [
     title: "Layout",
     expanded: true,
     topics: [
-      { id: "aspect-ratio", title: "Aspect Ratio", category: "layout" },
-      { id: "container", title: "Container", category: "layout" },
-      { id: "columns", title: "Columns", category: "layout" },
-      { id: "break-after", title: "Break After", category: "layout" },
-      { id: "break-before", title: "Break Before", category: "layout" },
-      { id: "break-inside", title: "Break Inside", category: "layout" },
+      { id: "Start your page", title: "Start your page", category: "layout" },
+      { id: "Create SEO page", title: "Create SEO page", category: "layout" },
       {
-        id: "box-decoration-break",
-        title: "Box Decoration Break",
+        id: "Private Route Integration",
+        title: "Private Route Integration",
         category: "layout",
       },
-      { id: "box-sizing", title: "Box Sizing", category: "layout" },
-      { id: "display", title: "Display", category: "layout" },
-      { id: "floats", title: "Floats", category: "layout" },
-      { id: "clear", title: "Clear", category: "layout" },
-      { id: "isolation", title: "Isolation", category: "layout" },
-      { id: "object-fit", title: "Object Fit", category: "layout" },
-      { id: "object-position", title: "Object Position", category: "layout" },
-      { id: "overflow", title: "Overflow", category: "layout" },
     ],
   },
   {
@@ -261,7 +249,7 @@ export default function TutorialNavigation({
             isCollapsed ? "opacity-0 w-0 overflow-hidden" : "opacity-100"
           }`}
         >
-          <img className="h-10 w-10" src="/icons/react_ts.svg" alt="" />
+          <img className="h-8 w-8" src="/app.icon.svg" alt="" />
           <p>Indexo</p>
         </div>
 

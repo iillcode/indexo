@@ -1,12 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
-import {
-  verifyStripeSignature,
-  verifyLemonSqueezySignature,
-} from "../_shared/webhook-verification.ts";
+import { verifyLemonSqueezySignature } from "../_shared/webhook-verification.ts";
 
-console.log("Payment webhook handler loaded (Stripe & LemonSqueezy)");
+// LemonSqueezy-only webhook handler
+console.log("LemonSqueezy webhook handler loaded");
 
 // Helper function to update user payment status in profile
 interface PaymentStatusUpdate {
@@ -19,29 +17,67 @@ interface PaymentStatusUpdate {
   tier?: string;
 }
 
-async function updateUserPaymentStatus(supabase: any, update: PaymentStatusUpdate) {
+async function updateUserPaymentStatus(
+  supabase: any,
+  update: PaymentStatusUpdate
+) {
   try {
     console.log(`Updating payment status for user ${update.userId}`);
-    
-    const { data, error } = await supabase.rpc('update_user_payment_status', {
-      user_uuid: update.userId,
-      tier: update.tier || 'pro',
-      provider: update.provider,
-      amount: update.amount,
-      currency: update.currency,
-      status: update.status,
-      expiry_type_param: update.expiryType || 'never'
-    });
+
+    // Calculate expiry date based on type
+    let expiryDate: Date | null = null;
+    const now = new Date();
+
+    switch (update.expiryType || "never") {
+      case "monthly":
+        const monthlyDate = new Date(now);
+        monthlyDate.setMonth(monthlyDate.getMonth() + 1);
+        expiryDate = monthlyDate;
+        break;
+      case "yearly":
+        const yearlyDate = new Date(now);
+        yearlyDate.setFullYear(yearlyDate.getFullYear() + 1);
+        expiryDate = yearlyDate;
+        break;
+      case "one_time":
+        // Effectively never for one-time purchases
+        const oneTimeDate = new Date(now);
+        oneTimeDate.setFullYear(oneTimeDate.getFullYear() + 100);
+        expiryDate = oneTimeDate;
+        break;
+      default:
+        // 'never' case - keep expiryDate as null
+        break;
+    }
+
+    // Update user profile with payment information using direct query
+    const { data, error } = await supabase
+      .from("profiles")
+      .update({
+        user_tier: update.tier || "pro",
+        payment_provider: update.provider,
+        payment_amount: update.amount,
+        payment_currency: update.currency,
+        payment_status: update.status,
+        payment_date: new Date().toISOString(),
+        expiry_date: expiryDate ? expiryDate.toISOString() : null,
+        expiry_type: update.expiryType || "never",
+        is_paid_user: update.status === "completed",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", update.userId);
 
     if (error) {
-      console.error('Error updating user payment status:', error);
+      console.error("Error updating user payment status:", error);
       throw error;
     }
 
-    console.log(`User payment status updated successfully for user ${update.userId}`);
+    console.log(
+      `User payment status updated successfully for user ${update.userId}`
+    );
     return data;
   } catch (error) {
-    console.error('Failed to update user payment status:', error);
+    console.error("Failed to update user payment status:", error);
     throw error;
   }
 }
@@ -55,24 +91,15 @@ serve(async (req: Request) => {
   try {
     // Get the raw body for signature verification
     const body = await req.text();
-    const stripeSignature = req.headers.get("stripe-signature");
     const lemonSignature = req.headers.get("x-signature");
 
-    const stripeWebhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
     const lemonWebhookSecret = Deno.env.get("LEMONSQUEEZY_WEBHOOK_SECRET");
 
     let isValidSignature = false;
     let webhookProvider = "unknown";
 
-    // Determine webhook provider and verify signature
-    if (stripeSignature && stripeWebhookSecret) {
-      isValidSignature = await verifyStripeSignature(
-        body,
-        stripeSignature,
-        stripeWebhookSecret
-      );
-      webhookProvider = "stripe";
-    } else if (lemonSignature && lemonWebhookSecret) {
+    // Verify LemonSqueezy signature (only supported provider now)
+    if (lemonSignature && lemonWebhookSecret) {
       isValidSignature = await verifyLemonSqueezySignature(
         body,
         lemonSignature,
@@ -101,9 +128,7 @@ serve(async (req: Request) => {
     }
 
     console.log(
-      `Processing ${webhookProvider} webhook event: ${
-        event.type || event.meta?.event_name
-      }`
+      `Processing ${webhookProvider} webhook event: ${event.meta?.event_name}`
     );
 
     // Use service role key for admin access in webhooks
@@ -118,51 +143,8 @@ serve(async (req: Request) => {
       }
     );
 
-    // Handle different event types based on provider
-    if (webhookProvider === "stripe") {
-      switch (event.type) {
-        case "checkout.session.completed":
-          await handleCheckoutSessionCompleted(
-            supabaseClient,
-            event.data.object
-          );
-          break;
-
-        case "payment_intent.succeeded":
-          await handlePaymentIntentSucceeded(supabaseClient, event.data.object);
-          break;
-
-        case "payment_intent.payment_failed":
-          await handlePaymentIntentFailed(supabaseClient, event.data.object);
-          break;
-
-        case "customer.subscription.created":
-          await handleSubscriptionCreated(supabaseClient, event.data.object);
-          break;
-
-        case "customer.subscription.updated":
-          await handleSubscriptionUpdated(supabaseClient, event.data.object);
-          break;
-
-        case "customer.subscription.deleted":
-          await handleSubscriptionDeleted(supabaseClient, event.data.object);
-          break;
-
-        case "invoice.payment_succeeded":
-          await handleInvoicePaymentSucceeded(
-            supabaseClient,
-            event.data.object
-          );
-          break;
-
-        case "invoice.payment_failed":
-          await handleInvoicePaymentFailed(supabaseClient, event.data.object);
-          break;
-
-        default:
-          console.log(`Unhandled Stripe event type: ${event.type}`);
-      }
-    } else if (webhookProvider === "lemonsqueezy") {
+    // Handle LemonSqueezy events (Stripe support has been removed)
+    if (webhookProvider === "lemonsqueezy") {
       const eventName = event.meta?.event_name;
       switch (eventName) {
         case "affiliate_activated":
@@ -295,434 +277,7 @@ serve(async (req: Request) => {
   }
 });
 
-// Handler functions for different Stripe events
-
-async function handleCheckoutSessionCompleted(supabase: any, session: any) {
-  console.log("Processing checkout session completed:", session.id);
-
-  try {
-    // Update payment status in database
-    const { data, error } = await supabase
-      .from("payments")
-      .update({
-        status: "completed",
-        payment_intent_id: session.payment_intent,
-        stripe_customer_id: session.customer,
-        customer_email: session.customer_details?.email,
-        provider: "stripe",
-        metadata: session.metadata || {},
-        updated_at: new Date().toISOString(),
-      })
-      .eq("session_id", session.id);
-
-    if (error) {
-      console.error("Error updating payment:", error);
-      throw error;
-    }
-
-    // Update user payment status in profile if we have user_id
-    const userId = session.metadata?.user_id;
-    if (userId) {
-      await updateUserPaymentStatus(supabase, {
-        userId,
-        provider: "stripe",
-        amount: session.amount_total / 100, // Convert from cents
-        currency: session.currency,
-        status: "completed",
-        expiryType: "never" // Assuming one-time payment for now
-      });
-    }
-
-    console.log("Payment updated successfully:", data);
-  } catch (error) {
-    console.error("Error in handleCheckoutSessionCompleted:", error);
-    throw error;
-  }
-}
-
-async function handlePaymentIntentSucceeded(supabase: any, paymentIntent: any) {
-  console.log("Processing payment intent succeeded:", paymentIntent.id);
-
-  try {
-    // First, try to find if there's an existing payment record
-    const { data: existingPayment, error: selectError } = await supabase
-      .from("payments")
-      .select("*")
-      .eq("payment_intent_id", paymentIntent.id)
-      .single();
-
-    if (selectError && selectError.code !== "PGRST116") {
-      // PGRST116 = no rows returned
-      console.error("Error checking existing payment:", selectError);
-      throw selectError;
-    }
-
-    if (existingPayment) {
-      // Update existing payment record
-      const { data, error } = await supabase
-        .from("payments")
-        .update({
-          status: "completed",
-          provider: "stripe",
-          updated_at: new Date().toISOString(),
-        })
-        .eq("payment_intent_id", paymentIntent.id);
-
-      if (error) {
-        console.error("Error updating payment intent:", error);
-        throw error;
-      }
-
-      console.log("Payment intent updated successfully:", data);
-    } else {
-      // Create new payment record for standalone payment intents
-      console.log(
-        "No existing payment record found, creating new payment record"
-      );
-
-      // Extract user_id from metadata if available
-      const userId = paymentIntent.metadata?.userId;
-
-      // If no user_id in metadata, we can't create a record without knowing which user this belongs to
-      if (!userId) {
-        console.error(
-          "No user_id found in payment intent metadata - cannot create payment record"
-        );
-        console.log("Payment intent metadata:", paymentIntent.metadata);
-        return; // Don't throw error, just log and return
-      }
-
-      const paymentData = {
-        user_id: userId,
-        amount: paymentIntent.amount / 100, // Convert from cents
-        currency: paymentIntent.currency,
-        status: "completed",
-        payment_intent_id: paymentIntent.id,
-        payment_method: paymentIntent.payment_method_types?.[0] || "card",
-        customer_email: paymentIntent.receipt_email,
-        stripe_customer_id: paymentIntent.customer,
-        provider: "stripe",
-        metadata: paymentIntent.metadata || {},
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-
-      const { data, error } = await supabase
-        .from("payments")
-        .insert(paymentData);
-
-      if (error) {
-        console.error("Error creating payment record:", error);
-        throw error;
-      }
-
-      console.log("Payment record created successfully:", data);
-
-      // Update user payment status in profile
-      await updateUserPaymentStatus(supabase, {
-        userId,
-        provider: "stripe",
-        amount: paymentIntent.amount / 100, // Convert from cents
-        currency: paymentIntent.currency,
-        status: "completed",
-        expiryType: "never" // Assuming one-time payment
-      });
-    }
-  } catch (error) {
-    console.error("Error in handlePaymentIntentSucceeded:", error);
-    throw error;
-  }
-}
-
-async function handlePaymentIntentFailed(supabase: any, paymentIntent: any) {
-  console.log("Processing payment intent failed:", paymentIntent.id);
-
-  try {
-    // First, try to find if there's an existing payment record
-    const { data: existingPayment, error: selectError } = await supabase
-      .from("payments")
-      .select("*")
-      .eq("payment_intent_id", paymentIntent.id)
-      .single();
-
-    if (selectError && selectError.code !== "PGRST116") {
-      // PGRST116 = no rows returned
-      console.error("Error checking existing payment:", selectError);
-      throw selectError;
-    }
-
-    if (existingPayment) {
-      // Update existing payment record to failed
-      const { data, error } = await supabase
-        .from("payments")
-        .update({
-          status: "failed",
-          provider: "stripe",
-          updated_at: new Date().toISOString(),
-        })
-        .eq("payment_intent_id", paymentIntent.id);
-
-      if (error) {
-        console.error("Error updating failed payment:", error);
-        throw error;
-      }
-
-      console.log("Failed payment updated successfully:", data);
-    } else {
-      // Create new failed payment record
-      console.log(
-        "No existing payment record found, creating failed payment record"
-      );
-
-      const userId = paymentIntent.metadata?.user_id;
-
-      if (!userId) {
-        console.error(
-          "No user_id found in payment intent metadata - cannot create failed payment record"
-        );
-        console.log("Payment intent metadata:", paymentIntent.metadata);
-        return;
-      }
-
-      const paymentData = {
-        user_id: userId,
-        amount: paymentIntent.amount / 100, // Convert from cents
-        currency: paymentIntent.currency,
-        status: "failed",
-        payment_intent_id: paymentIntent.id,
-        payment_method: paymentIntent.payment_method_types?.[0] || "card",
-        customer_email: paymentIntent.receipt_email,
-        stripe_customer_id: paymentIntent.customer,
-        provider: "stripe",
-        metadata: paymentIntent.metadata || {},
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-
-      const { data, error } = await supabase
-        .from("payments")
-        .insert(paymentData);
-
-      if (error) {
-        console.error("Error creating failed payment record:", error);
-        throw error;
-      }
-
-      console.log("Failed payment record created successfully:", data);
-    }
-  } catch (error) {
-    console.error("Error in handlePaymentIntentFailed:", error);
-    throw error;
-  }
-}
-
-async function handleSubscriptionCreated(supabase: any, subscription: any) {
-  console.log("Processing subscription created:", subscription.id);
-
-  try {
-    // Extract user ID from metadata or customer email
-    const userId = subscription.metadata?.user_id;
-    if (!userId) {
-      console.error("No user_id found in subscription metadata");
-      return;
-    }
-
-    const subscriptionData = {
-      user_id: userId,
-      subscription_id: subscription.id,
-      customer_id: subscription.customer,
-      status: subscription.status,
-      plan_id: subscription.items.data[0]?.plan?.id,
-      plan_name:
-        subscription.items.data[0]?.plan?.nickname ||
-        subscription.items.data[0]?.plan?.name,
-      current_period_start: new Date(
-        subscription.current_period_start * 1000
-      ).toISOString(),
-      current_period_end: new Date(
-        subscription.current_period_end * 1000
-      ).toISOString(),
-      cancel_at_period_end: subscription.cancel_at_period_end || false,
-      trial_start: subscription.trial_start
-        ? new Date(subscription.trial_start * 1000).toISOString()
-        : null,
-      trial_end: subscription.trial_end
-        ? new Date(subscription.trial_end * 1000).toISOString()
-        : null,
-      metadata: subscription.metadata || {},
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-
-    const { data, error } = await supabase
-      .from("subscriptions")
-      .upsert(subscriptionData, {
-        onConflict: "subscription_id",
-        ignoreDuplicates: false,
-      });
-
-    if (error) {
-      console.error("Error creating subscription:", error);
-      throw error;
-    }
-
-    console.log("Subscription created successfully:", data);
-  } catch (error) {
-    console.error("Error in handleSubscriptionCreated:", error);
-    throw error;
-  }
-}
-
-async function handleSubscriptionUpdated(supabase: any, subscription: any) {
-  console.log("Processing subscription updated:", subscription.id);
-
-  try {
-    const updateData = {
-      status: subscription.status,
-      plan_id: subscription.items.data[0]?.plan?.id,
-      plan_name:
-        subscription.items.data[0]?.plan?.nickname ||
-        subscription.items.data[0]?.plan?.name,
-      current_period_start: new Date(
-        subscription.current_period_start * 1000
-      ).toISOString(),
-      current_period_end: new Date(
-        subscription.current_period_end * 1000
-      ).toISOString(),
-      cancel_at_period_end: subscription.cancel_at_period_end || false,
-      canceled_at: subscription.canceled_at
-        ? new Date(subscription.canceled_at * 1000).toISOString()
-        : null,
-      ended_at: subscription.ended_at
-        ? new Date(subscription.ended_at * 1000).toISOString()
-        : null,
-      metadata: subscription.metadata || {},
-      updated_at: new Date().toISOString(),
-    };
-
-    const { data, error } = await supabase
-      .from("subscriptions")
-      .update(updateData)
-      .eq("subscription_id", subscription.id);
-
-    if (error) {
-      console.error("Error updating subscription:", error);
-      throw error;
-    }
-
-    console.log("Subscription updated successfully:", data);
-  } catch (error) {
-    console.error("Error in handleSubscriptionUpdated:", error);
-    throw error;
-  }
-}
-
-async function handleSubscriptionDeleted(supabase: any, subscription: any) {
-  console.log("Processing subscription deleted:", subscription.id);
-
-  try {
-    const updateData = {
-      status: "canceled",
-      ended_at: new Date(subscription.ended_at * 1000).toISOString(),
-      canceled_at: subscription.canceled_at
-        ? new Date(subscription.canceled_at * 1000).toISOString()
-        : new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-
-    const { data, error } = await supabase
-      .from("subscriptions")
-      .update(updateData)
-      .eq("subscription_id", subscription.id);
-
-    if (error) {
-      console.error("Error updating deleted subscription:", error);
-      throw error;
-    }
-
-    console.log("Subscription deleted successfully:", data);
-  } catch (error) {
-    console.error("Error in handleSubscriptionDeleted:", error);
-    throw error;
-  }
-}
-
-async function handleInvoicePaymentSucceeded(supabase: any, invoice: any) {
-  console.log("Processing invoice payment succeeded:", invoice.id);
-
-  try {
-    // Create a new payment record for successful invoice payment
-    const paymentData = {
-      user_id: invoice.metadata?.user_id,
-      plan_id: invoice.lines.data[0]?.plan?.id,
-      plan_name:
-        invoice.lines.data[0]?.plan?.nickname ||
-        invoice.lines.data[0]?.plan?.name,
-      amount: invoice.amount_paid / 100, // Convert from cents
-      currency: invoice.currency,
-      status: "completed",
-      payment_intent_id: invoice.payment_intent,
-      payment_method: "subscription",
-      customer_email: invoice.customer_email,
-      stripe_customer_id: invoice.customer,
-      provider: "stripe",
-      metadata: invoice.metadata || {},
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-
-    const { data, error } = await supabase.from("payments").insert(paymentData);
-
-    if (error) {
-      console.error("Error creating invoice payment:", error);
-      throw error;
-    }
-
-    console.log("Invoice payment recorded successfully:", data);
-  } catch (error) {
-    console.error("Error in handleInvoicePaymentSucceeded:", error);
-    throw error;
-  }
-}
-
-async function handleInvoicePaymentFailed(supabase: any, invoice: any) {
-  console.log("Processing invoice payment failed:", invoice.id);
-
-  try {
-    // Create a failed payment record
-    const paymentData = {
-      user_id: invoice.metadata?.user_id,
-      plan_id: invoice.lines.data[0]?.plan?.id,
-      plan_name:
-        invoice.lines.data[0]?.plan?.nickname ||
-        invoice.lines.data[0]?.plan?.name,
-      amount: invoice.amount_due / 100, // Convert from cents
-      currency: invoice.currency,
-      status: "failed",
-      payment_method: "subscription",
-      customer_email: invoice.customer_email,
-      stripe_customer_id: invoice.customer,
-      provider: "stripe",
-      metadata: invoice.metadata || {},
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-
-    const { data, error } = await supabase.from("payments").insert(paymentData);
-
-    if (error) {
-      console.error("Error creating failed invoice payment:", error);
-      throw error;
-    }
-
-    console.log("Failed invoice payment recorded successfully:", data);
-  } catch (error) {
-    console.error("Error in handleInvoicePaymentFailed:", error);
-    throw error;
-  }
-}
-
-// LemonSqueezy webhook handlers
+// LemonSqueezy webhook handlers (all Stripe handlers have been removed)
 
 async function handleLemonSqueezyOrderCreated(supabase: any, orderData: any) {
   console.log("Processing LemonSqueezy order created:", orderData.id);
@@ -753,55 +308,7 @@ async function handleLemonSqueezyOrderCreated(supabase: any, orderData: any) {
       }
     }
 
-    // Store in lemon_orders table
-    const lemonOrderData = {
-      user_id: userId, // Can be null
-      order_id: orderData.id,
-      order_number: order.order_number,
-      identifier: order.identifier,
-      store_id: order.store_id,
-      customer_id: order.customer_id,
-      status: order.status,
-      currency: order.currency,
-      total: order.total / 100, // Convert from cents
-      subtotal: order.subtotal / 100,
-      tax: order.tax / 100,
-      tax_rate: order.tax_rate,
-      tax_name: order.tax_name,
-      tax_inclusive: order.tax_inclusive,
-      discount_total: order.discount_total / 100,
-      setup_fee: order.setup_fee / 100,
-      refunded: order.refunded,
-      refunded_amount: order.refunded_amount / 100,
-      refunded_at: order.refunded_at,
-      test_mode: order.test_mode,
-      currency_rate: parseFloat(order.currency_rate),
-      user_name: order.user_name,
-      user_email: order.user_email,
-      total_formatted: order.total_formatted,
-      subtotal_formatted: order.subtotal_formatted,
-      tax_formatted: order.tax_formatted,
-      discount_formatted: order.discount_total_formatted,
-      setup_fee_formatted: order.setup_fee_formatted,
-      refunded_amount_formatted: order.refunded_amount_formatted,
-      receipt_url: order.urls?.receipt,
-      first_order_item: firstOrderItem,
-      relationships: orderData.relationships,
-      metadata: order.metadata || {},
-      created_at: order.created_at,
-      updated_at: order.updated_at,
-    };
-
-    const { data: lemonOrder, error: lemonError } = await supabase
-      .from("lemon_orders")
-      .insert(lemonOrderData);
-
-    if (lemonError) {
-      console.error("Error creating LemonSqueezy order:", lemonError);
-      throw lemonError;
-    }
-
-    // Also store in payments table for unified payment tracking
+    // Store in payments table (removed lemon_orders table usage)
     const paymentData = {
       user_id: userId, // Can be null
       order_id: orderData.id,
@@ -851,18 +358,23 @@ async function handleLemonSqueezyOrderCreated(supabase: any, orderData: any) {
       updated_at: order.updated_at,
     };
 
-    const { data: payment, error: paymentError } = await supabase
+    // Use upsert to handle both insert and update cases
+    // This will insert a new record if no matching order_id is found,
+    // or update the existing record if it exists
+    const { data: paymentDataResult, error: paymentError } = await supabase
       .from("payments")
-      .insert(paymentData);
+      .upsert(paymentData, {
+        onConflict: "order_id",
+        ignoreDuplicates: false,
+      });
 
     if (paymentError) {
-      console.error("Error creating payment record:", paymentError);
+      console.error("Error upserting payment record:", paymentError);
       throw paymentError;
     }
 
     console.log("LemonSqueezy order processed successfully:", {
-      lemonOrder,
-      payment,
+      payment: paymentDataResult,
       userFound: userId !== null,
       email: order.user_email,
     });
@@ -875,7 +387,7 @@ async function handleLemonSqueezyOrderCreated(supabase: any, orderData: any) {
         amount: order.total / 100, // Convert from cents
         currency: order.currency,
         status: "completed",
-        expiryType: "never" // Assuming one-time payment
+        expiryType: "never", // Assuming one-time payment
       });
     }
   } catch (error) {
@@ -890,38 +402,25 @@ async function handleLemonSqueezyOrderRefunded(supabase: any, orderData: any) {
   try {
     const order = orderData.attributes;
 
-    // Update lemon_orders table
-    const { error: lemonError } = await supabase
-      .from("lemon_orders")
-      .update({
-        refunded: true,
-        refunded_amount: order.refunded_amount / 100,
-        refunded_at: order.refunded_at || new Date().toISOString(),
-        refunded_amount_formatted: order.refunded_amount_formatted,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("order_id", orderData.id);
-
-    if (lemonError) {
-      console.error("Error updating LemonSqueezy order refund:", lemonError);
-      throw lemonError;
-    }
-
-    // Update payments table
-    const { error: paymentError } = await supabase
-      .from("payments")
-      .update({
+    // Update payments table (removed lemon_orders table usage)
+    const { error: paymentError } = await supabase.from("payments").upsert(
+      {
+        order_id: orderData.id,
         status: "refunded",
         refunded: true,
         refunded_amount: order.refunded_amount / 100,
         refunded_at: order.refunded_at || new Date().toISOString(),
         refunded_amount_formatted: order.refunded_amount_formatted,
         updated_at: new Date().toISOString(),
-      })
-      .eq("order_id", orderData.id);
+      },
+      {
+        onConflict: "order_id",
+        ignoreDuplicates: false,
+      }
+    );
 
     if (paymentError) {
-      console.error("Error updating payment refund:", paymentError);
+      console.error("Error upserting payment refund:", paymentError);
       throw paymentError;
     }
 
@@ -967,10 +466,13 @@ async function handleLemonSqueezySubscriptionCreated(
 
     const { data, error } = await supabase
       .from("subscriptions")
-      .insert(subscriptionRecord);
+      .upsert(subscriptionRecord, {
+        onConflict: "subscription_id",
+        ignoreDuplicates: false,
+      });
 
     if (error) {
-      console.error("Error creating LemonSqueezy subscription:", error);
+      console.error("Error upserting LemonSqueezy subscription:", error);
       throw error;
     }
 
@@ -994,6 +496,7 @@ async function handleLemonSqueezySubscriptionUpdated(
     const subscription = subscriptionData.attributes;
 
     const updateData = {
+      subscription_id: subscriptionData.id,
       status: subscription.status,
       plan_id: subscription.variant_id?.toString(),
       plan_name: subscription.variant_name || subscription.product_name,
@@ -1011,11 +514,13 @@ async function handleLemonSqueezySubscriptionUpdated(
 
     const { data, error } = await supabase
       .from("subscriptions")
-      .update(updateData)
-      .eq("subscription_id", subscriptionData.id);
+      .upsert(updateData, {
+        onConflict: "subscription_id",
+        ignoreDuplicates: false,
+      });
 
     if (error) {
-      console.error("Error updating LemonSqueezy subscription:", error);
+      console.error("Error upserting LemonSqueezy subscription:", error);
       throw error;
     }
 
@@ -1039,6 +544,7 @@ async function handleLemonSqueezySubscriptionCancelled(
     const subscription = subscriptionData.attributes;
 
     const updateData = {
+      subscription_id: subscriptionData.id,
       status: "canceled",
       cancel_at_period_end: true,
       canceled_at: subscription.ends_at || new Date().toISOString(),
@@ -1052,11 +558,13 @@ async function handleLemonSqueezySubscriptionCancelled(
 
     const { data, error } = await supabase
       .from("subscriptions")
-      .update(updateData)
-      .eq("subscription_id", subscriptionData.id);
+      .upsert(updateData, {
+        onConflict: "subscription_id",
+        ignoreDuplicates: false,
+      });
 
     if (error) {
-      console.error("Error cancelling LemonSqueezy subscription:", error);
+      console.error("Error upserting LemonSqueezy subscription:", error);
       throw error;
     }
 

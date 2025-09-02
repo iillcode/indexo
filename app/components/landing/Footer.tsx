@@ -70,7 +70,7 @@ const defaultLegalLinks = [
 export const Footer7 = ({
   logo = {
     url: "https://www.shadcnblocks.com",
-    src: "https://www.shadcnblocks.com/images/block/logos/shadcnblockscom-icon.svg",
+    src: "/app.icon.svg",
     alt: "logo",
     title: "Shadcnblocks.com",
   },

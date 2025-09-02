@@ -165,8 +165,7 @@ The webhook handler at `/supabase/functions/stripe-webhook` already supports Lem
 
 The integration uses these tables:
 
-- `payments` - Stores payment records
-- `lemon_orders` - Stores LemonSqueezy-specific order data
+- `payments` - Stores payment records for all providers (Stripe and LemonSqueezy)
 - `subscriptions` - Stores subscription data
 
 User association is handled automatically via email lookup.

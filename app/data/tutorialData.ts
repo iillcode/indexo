@@ -3,278 +3,208 @@ export interface TutorialContent {
 }
 
 export const tutorialContent: TutorialContent = {
-  "aspect-ratio": `# Aspect Ratio
+  "Start your page": `# Home Page Component Integration
+  Learn how to put together all the pieces of your home page quickly and easily.
 
-The \`aspect-ratio\` utilities are used to constrain an element to specific aspect ratios.
 
-## Basic Usage
+## How Your Home Page Works
+Your home page is built like a puzzle - each piece (component) fits together to create the complete picture. Here's how the pieces fit:
+  
 
-Use the aspect ratio utilities to set the desired aspect ratio of an element.
-- \`/app/src/app/components/aspect-ratio.tsx\`
-\`\`\`html
-<iframe class="w-full aspect-video ..." src="https://www.youtube.com/..."></iframe>
-\`\`\`
-- You can also use the \`aspect-{ratio}\` utilities to set the desired aspect ratio of an element. \n\n
-## Arbitrary values
+# 1. Adding Components to Your Home Page 🧩
 
-If you need to use a one-off aspect ratio value that doesn't make sense to include in your theme, use square brackets to generate a property on the fly using any arbitrary value.
+Let's see how to add components to your home page in simple steps:
 
-\`\`\`html
-<iframe class="w-full aspect-[4/3] ..." src="https://www.youtube.com/..."></iframe>
-\`\`\`
+- Open file \`app/page.tsx\` and copy paste the following code:
 
-## Responsive Design
+\`\`\`typescript
+import HomeClient from "@/components/home/HomeClient";
 
-To control the aspect ratio of an element at a specific breakpoint, add a \`{screen}:\` prefix to any existing aspect ratio utility.
-
-\`\`\`html
-<iframe class="w-full aspect-video md:aspect-square ..." src="https://www.youtube.com/..."></iframe>
-\`\`\`
-
-## Customizing your theme
-
-By default, Tailwind provides a minimal set of aspect-ratio utilities:
-
-\`\`\`javascript
-module.exports = {
-  theme: {
-    extend: {
-      aspectRatio: {
-        '4/3': '4 / 3',
-      }
-    }
-  }
+export default function Home() {
+  return <HomeClient />;
 }
-\`\`\``,
-
-  container: `# Container
-
-A component for fixing an element's width to the current breakpoint.
-
-## Basic Usage
-
-The \`container\` class sets the \`max-width\` of an element to match the \`min-width\` of the current breakpoint. This is useful if you'd prefer to design for a fixed set of screen sizes instead of trying to accommodate a fully fluid viewport.
-
-\`\`\`html
-<div class="container mx-auto">
-  <!-- ... -->
-</div>
 \`\`\`
 
-## Centering by default
 
-To center containers by default, set the \`center\` option to \`true\` in the \`container\` configuration:
 
-\`\`\`javascript
-module.exports = {
-  theme: {
-    container: {
-      center: true,
-    },
+# 2. Import all components 
+This is where all components come together:
+
+- Open \`components/home/HomeClient.tsx\` file and copy paste the following code:
+
+
+\`\`\`typescript
+"use client";
+
+import { HeroHeader } from "@/components/Header";
+import { HeroSection } from "@/components/HeroSection";
+import { Testimonial } from "@/components/Testimonials";
+import { Footer7 } from "@/components/Footer";
+
+export default function HomeClient() {
+  return (
+    <>
+      <HeroHeader />
+      <HeroSection />
+      <Testimonial />
+      <Footer7 />
+    </>
+  );
+}
+\`\`\`
+
+`,
+
+  "Create SEO page": `# Create SEO page
+
+Learn how to create a search engine optimized static page using the built-in SEO system.
+
+
+## Creating a Static SEO Page 📄
+
+Let's create an "About Us" page with full SEO integration:
+
+
+
+### 1. Basic Page Structure
+
+Create a new page file (e.g., \`app/about/page.tsx\` ) and add the following code:
+
+
+\`\`\`typescript
+import type { Metadata } from "next";
+import { createPageMetadata } from "@/lib/seo/metadata";
+import { WebPageSEO } from "@/lib/seo/jsonld";
+import AboutComponent from "@/components/AboutComponent";
+
+
+// Add SEO metadata
+export const metadata: Metadata = createPageMetadata({
+  title: "About Us",
+  description: "Learn more about our company, mission, and values.",
+  path: "/about",
+  keywords: ["about", "company", "mission", "values"],
+});
+
+export default function AboutPage() {
+  return (
+    <>
+      {/* Add structured data */}
+      <WebPageSEO
+        path="/about"
+        title="About Us"
+        description="Learn more about our company, mission, and values."
+      />
+      
+      {/* Your page content */}
+      <div className="container mx-auto py-12">
+        <h1>About Our Company</h1>
+        <p className="mt-4">Your company story here...</p>
+      </div>
+    </>
+  );
+}
+\`\`\`
+
+## 2. Create a About component
+
+- Create a new file \`components/AboutComponent.tsx\` and add the following code:
+
+\`\`\`typescript
+"use client";
+
+import { WebPageSEO } from "@/lib/seo/jsonld";
+
+
+export default function AboutComponent() {
+  return (
+    <>
+      {/* Add structured data */}
+      <WebPageSEO
+        path="/about"
+        title="About Us"
+        description="Learn more about our company, mission, and values."
+      />
+      
+      {/* Your page content */}
+      <div className="container mx-auto py-12">
+        <h1>About Our Company</h1>
+        <p className="mt-4">Your company story here...</p>
+      </div>
+    </>
+  );
+}
+\`\`\`
+
+
+
+## 2. Add your static page route on \`sitemap.tsx\` 
+
+- Open \`lib/seo/sitemap.ts\` and edit the following code:
+
+\`\`\`typescript
+// Central list of static routes. Add project pages here.
+export const staticRoutes: StaticRoute[] = [
+  { path: "/", changeFrequency: "weekly", priority: 1 },
+  // Add new path
+  { path: "/new-path", changeFrequency: "monthly", priority: 0.8 }, 
+];
+
+\`\`\`
+
+## Testing Your SEO 🧪
+
+### Check Metadata
+1. View page source in browser
+2. Verify title and description tags
+3. Confirm canonical URL
+
+
+`,
+
+  "Private Route Integration": `# Private Route Integration
+
+Learn how to protect pages that should only be accessible to authenticated users.
+
+## Why Private Routes Matter
+
+Private routes protect sensitive content and user-specific information. They ensure only logged-in users can access certain pages like dashboards, profiles, or account settings.
+
+
+## Setting Up Private Routes 🔐
+
+### 1. Configure Protected Routes
+
+The centralized configuration system makes it easy to manage private routes. Open \`config/app-config.ts\`:
+
+\`\`\`typescript
+export const defaultAppConfig: AppConfig = {
+  // ... other config
+  routing: {
+    private_routes_enabled: true, // Enable private route protection
+    protected_routes: ["/dashboard", "/profile", "/pricing"], // Routes that require authentication
   },
+};
+\`\`\`
+
+
+### 2. Add New Private Routes
+
+To add a new private route like \`"/settings"\`:
+
+\`\`\`typescript
+routing: {
+  private_routes_enabled: true,
+  protected_routes: ["/dashboard", "/profile", "/pricing", "/settings"], // Added new route
 }
 \`\`\`
 
-## Adding horizontal padding
 
-To add horizontal padding by default, specify the amount of padding you'd like using the \`padding\` option:
+### 3. How It Works
 
-\`\`\`javascript
-module.exports = {
-  theme: {
-    container: {
-      center: true,
-      padding: '2rem',
-    },
-  },
-}
-\`\`\``,
+The system automatically protects routes listed in \`protected_routes\` when \`private_routes_enabled\` is true.
 
-  columns: `# Columns
-
-Utilities for controlling the number of columns within an element.
-
-## Basic Usage
-
-Use the \`columns-{count}\` utilities to set the number of columns that should be created for the content within an element. The column width will be automatically calculated based on the number of columns.
-
-\`\`\`html
-<div class="columns-2">
-  <p>Well, let me tell you something, ...</p>
-  <p>Sure, go ahead, laugh...</p>
-  <p>Burn her anyway!</p>
-</div>
-\`\`\`
-
-You can also use \`columns-{width}\` utilities to set the ideal column width for the content, with the number of columns (the count) automatically adjusting to accommodate that value:
-
-\`\`\`html
-<div class="columns-3xs">
-  <p>Well, let me tell you something, ...</p>
-  <p>Sure, go ahead, laugh...</p>
-  <p>Burn her anyway!</p>
-</div>
-\`\`\`
-
-## Setting the column gap
-
-To specify the width between columns, you can use the \`gap-x\` utilities:
-
-\`\`\`html
-<div class="columns-3 gap-8">
-  <p>Well, let me tell you something, ...</p>
-  <p>Sure, go ahead, laugh...</p>
-  <p>Burn her anyway!</p>
-</div>
-\`\`\`
-
-## Responsive Design
-
-To control the columns of an element at a specific breakpoint, add a \`{screen}:\` prefix to any existing columns utility.
-
-\`\`\`html
-<div class="columns-1 md:columns-3">
-  <p>Well, let me tell you something, ...</p>
-  <p>Sure, go ahead, laugh...</p>
-  <p>Burn her anyway!</p>
-</div>
-\`\`\``,
-
-  "break-after": `# Break After
-
-Utilities for controlling how a column or page should break after an element.
-
-## Basic Usage
-
-Use \`break-after-auto\` to allow page and column breaks to be automatically calculated:
-
-\`\`\`html
-<div class="columns-2">
-  <p>Well, let me tell you something, ...</p>
-  <p class="break-after-column">Sure, go ahead, laugh if you will...</p>
-  <p>Burn her anyway!</p>
-</div>
-\`\`\`
-
-Use \`break-after-avoid\` to avoid page and column breaks after an element:
-
-\`\`\`html
-<div class="columns-2">
-  <p>Well, let me tell you something, ...</p>
-  <p class="break-after-avoid">Sure, go ahead, laugh if you will...</p>
-  <p>Burn her anyway!</p>
-</div>
-\`\`\`
-
-Use \`break-after-all\` to force page and column breaks after an element:
-
-\`\`\`html
-<div class="columns-2">
-  <p>Well, let me tell you something, ...</p>
-  <p class="break-after-all">Sure, go ahead, laugh if you will...</p>
-  <p>Burn her anyway!</p>
-</div>
-\`\`\``,
-
-  "break-before": `# Break Before
-
-Utilities for controlling how a column or page should break before an element.
-
-## Basic Usage
-
-Use \`break-before-auto\` to allow page and column breaks to be automatically calculated:
-
-\`\`\`html
-<div class="columns-2">
-  <p>Well, let me tell you something, ...</p>
-  <p class="break-before-column">Sure, go ahead, laugh if you will...</p>
-  <p>Burn her anyway!</p>
-</div>
-\`\`\`
-
-Use \`break-before-avoid\` to avoid page and column breaks before an element:
-
-\`\`\`html
-<div class="columns-2">
-  <p>Well, let me tell you something, ...</p>
-  <p class="break-before-avoid">Sure, go ahead, laugh if you will...</p>
-  <p>Burn her anyway!</p>
-</div>
-\`\`\`
-
-Use \`break-before-all\` to force page and column breaks before an element:
-
-\`\`\`html
-<div class="columns-2">
-  <p>Well, let me tell you something, ...</p>
-  <p class="break-before-all">Sure, go ahead, laugh if you will...</p>
-  <p>Burn her anyway!</p>
-</div>
-\`\`\``,
-
-  "flex-direction": `# Flex Direction
-
-Utilities for controlling the direction of flex items.
-
-## Row
-
-Use \`flex-row\` to position flex items horizontally in the same direction as text:
-
-\`\`\`html
-<div class="flex flex-row ...">
-  <div>01</div>
-  <div>02</div>
-  <div>03</div>
-</div>
-\`\`\`
-
-## Row reversed
-
-Use \`flex-row-reverse\` to position flex items horizontally in the opposite direction:
-
-\`\`\`html
-<div class="flex flex-row-reverse ...">
-  <div>01</div>
-  <div>02</div>
-  <div>03</div>
-</div>
-\`\`\`
-
-## Column
-
-Use \`flex-col\` to position flex items vertically:
-
-\`\`\`html
-<div class="flex flex-col ...">
-  <div>01</div>
-  <div>02</div>
-  <div>03</div>
-</div>
-\`\`\`
-
-## Column reversed
-
-Use \`flex-col-reverse\` to position flex items vertically in the opposite direction:
-
-\`\`\`html
-<div class="flex flex-col-reverse ...">
-  <div>01</div>
-  <div>02</div>
-  <div>03</div>
-</div>
-\`\`\`
-
-## Responsive Design
-
-To control the flex direction of an element at a specific breakpoint, add a \`{screen}:\` prefix to any existing flex direction utility.
-
-\`\`\`html
-<div class="flex flex-col md:flex-row">
-  <div>01</div>
-  <div>02</div>
-  <div>03</div>
-</div>
-\`\`\``,
+`,
 
   width: `# Width
 

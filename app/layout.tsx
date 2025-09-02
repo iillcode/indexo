@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { rootMetadata } from "@/lib/seo/metadata";
+import { GlobalJsonLd } from "@/lib/seo/jsonld";
+
 import "./globals.css";
 
 const geistSans = Geist({
@@ -13,10 +16,8 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Developer Dictionary",
-  description: "Explore project structures and technical concepts",
-};
+export const metadata: Metadata = rootMetadata();
+
 
 export default function RootLayout({
   children,
@@ -25,9 +26,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link rel="icon" href="/app.icon.svg" type="image/svg+xml" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <GlobalJsonLd />
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>

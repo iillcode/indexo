@@ -3,10 +3,6 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function middleware(request: NextRequest) {
   const { supabase, response } = createClient(request);
-
-  // Refresh session if expired - required for Server Components
-  await supabase.auth.getUser();
-
   const url = request.nextUrl.clone();
   const pathname = url.pathname;
 
@@ -24,7 +20,12 @@ export async function middleware(request: NextRequest) {
     protectedRoutes.some((route) => pathname.startsWith(route)) ||
     (!isPublicRoute && !pathname.startsWith("/auth"));
 
-  // Get user session
+  // For purely public routes, we can skip any auth call entirely
+  if (isPublicRoute && !isProtectedRoute && !isAuthRoute) {
+    return response;
+  }
+
+  // Get user once (also refreshes session if needed)
   const {
     data: { user },
   } = await supabase.auth.getUser();

@@ -9,15 +9,29 @@ import {
 } from "@/lib/lemonsqueezy";
 import { LEMONSQUEEZY_CONFIG } from "@/lib/lemonsqueezy-config";
 import { useAuth } from "@/contexts/AuthContext";
-import { usePaymentStatus, useCanMakePayment } from "@/hooks/usePaymentStatus";
+import { usePaymentStatus } from "@/hooks/usePaymentStatus";
 
 function PricingCardDemo() {
   const { user, profile } = useAuth();
   const paymentStatus = usePaymentStatus();
-  const { canMakePayment, reason } = useCanMakePayment();
+  // Derive canMakePayment locally to avoid double-calling the hook
+  const canMakePayment = !!user && paymentStatus.canMakePayment && !paymentStatus.isPaid;
+  const reason = !user
+    ? "Please log in to make a purchase"
+    : paymentStatus.isPaid
+    ? "You already have an active subscription"
+    : !paymentStatus.canMakePayment
+    ? "Payment not available at this time"
+    : null;
   const [isLoading, setIsLoading] = useState(false);
   const [product, setProduct] = useState<LemonSqueezyProduct | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [shouldShowLoading, setShouldShowLoading] = useState(true);
+
+  // Helper function to format price (remove .00)
+  const formatPrice = (price: string): string => {
+    return price.replace(/\.00$/, "");
+  };
 
   // LemonSqueezy Product ID - Replace with your actual product ID
   const PRODUCT_ID = LEMONSQUEEZY_CONFIG.PRODUCT_ID;
@@ -38,7 +52,54 @@ function PricingCardDemo() {
     loadProduct();
   }, []);
 
+  // Handle page visibility changes (tab switching, browser navigation, etc.)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        // When page becomes visible, only show loading if we don't have data
+        if (!paymentStatus.isLoading && paymentStatus.tier !== "free") {
+          setShouldShowLoading(false);
+        }
+      }
+    };
+
+    // Check initial state
+    if (!paymentStatus.isLoading) {
+      setShouldShowLoading(false);
+    }
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    // Cleanup
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [paymentStatus.isLoading, paymentStatus.tier]);
+
+  // Handle window focus events (browser navigation, tab switching)
+  useEffect(() => {
+    const handleFocus = () => {
+      // When window regains focus, only show loading if we don't have data
+      if (!paymentStatus.isLoading && paymentStatus.tier !== "free") {
+        setShouldShowLoading(false);
+      }
+    };
+
+    window.addEventListener("focus", handleFocus);
+
+    // Cleanup
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [paymentStatus.isLoading, paymentStatus.tier]);
+
   const handleCheckout = async () => {
+    // If user is not logged in, redirect to login page
+    if (!user) {
+      window.location.href = "/auth/login?redirect=/#pricing";
+      return;
+    }
+
     if (!product) {
       setError("Product not loaded yet. Please try again.");
       return;
@@ -127,31 +188,23 @@ function PricingCardDemo() {
         <div className="mb-4 text-center">
           <div className="flex items-end justify-center gap-2 mb-3">
             <span className="text-6xl font-bold tracking-tight text-foreground">
-              {product ? product.attributes.price_formatted : "$79"}
+              {product
+                ? formatPrice(product.attributes.price_formatted)
+                : "$79"}
             </span>
             <div className="flex flex-col items-start pb-1">
               <span className="text-muted-foreground text-sm line-through">
-                $349
+                {product ? formatPrice("$349.00") : "$349"}
               </span>
               <span className="text-green-500 text-sm font-medium">
-                $270 off
+                {product ? formatPrice("$270.00") : "$270"} off
               </span>
             </div>
           </div>
-
-          {/* Tags */}
-          {/* <div className="flex gap-2 justify-center mb-4">
-            <span className="bg-yellow-400 text-black px-3 py-1 rounded-full text-xs font-medium">
-              One time payment
-            </span>
-            <span className="bg-yellow-400 text-black px-3 py-1 rounded-full text-xs font-medium">
-              Early Access
-            </span>
-          </div> */}
         </div>
 
         {/* Button */}
-        {paymentStatus.isLoading ? (
+        {shouldShowLoading && paymentStatus.isLoading ? (
           <Button
             className="w-full font-semibold text-white mb-3 opacity-70 cursor-not-allowed"
             disabled
@@ -168,17 +221,17 @@ function PricingCardDemo() {
             disabled
           >
             <Crown className="mr-2 h-4 w-4" />
-            {paymentStatus.tier === 'pro' ? 'Pro Member' : 'Paid Member'}
+            {paymentStatus.tier === "pro" ? "Pro Member" : "Paid Member"}
           </Button>
         ) : (
           <Button
             className={cn(
               "w-full font-semibold text-white mb-3",
               "bg-gradient-to-b from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-lg",
-              (isLoading || !canMakePayment) && "opacity-70 cursor-not-allowed"
+              isLoading && "opacity-70 cursor-not-allowed"
             )}
             onClick={handleCheckout}
-            disabled={isLoading || !product || !canMakePayment}
+            disabled={isLoading || !product}
           >
             {isLoading ? (
               <>
@@ -186,7 +239,7 @@ function PricingCardDemo() {
                 Processing...
               </>
             ) : !user ? (
-              "Login to Purchase"
+              "Get Indexo"
             ) : !canMakePayment ? (
               "Already Purchased"
             ) : (

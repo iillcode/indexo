@@ -14,6 +14,7 @@ import css from "react-syntax-highlighter/dist/esm/languages/hljs/css";
 import json from "react-syntax-highlighter/dist/esm/languages/hljs/json";
 import markdown from "react-syntax-highlighter/dist/esm/languages/hljs/markdown";
 import yaml from "react-syntax-highlighter/dist/esm/languages/hljs/yaml";
+import { WebPageSEO } from "@/lib/seo/jsonld";
 
 // Register languages once
 SyntaxHighlighter.registerLanguage("javascript", javascript);
@@ -292,41 +293,51 @@ export default function TutorialContent({
   };
 
   return (
-    <div className="h-full bg-gradient-to-br from-black to-orange-700/10 flex flex-col overflow-hidden relative">
-      {/* Orange gradient overlay with reduced opacity on left side */}
-      <div className="flex-1 overflow-y-auto pl-10 py-8">
-        <div className="p-6 w-[70%]">
-          {selectedTopic ? (
-            <>
-              <div className="flex items-center gap-2 mb-4">
-                <FileText className="w-5 h-5 text-orange-400" />
-                <h2 className="text-2xl font-semibold text-white">
-                  {formatTopicTitle(selectedTopic)}
-                </h2>
-              </div>
-              {content ? (
-                renderContent(content)
-              ) : (
-                <div className="text-base text-white">
-                  Tutorial content for this topic is coming soon.
+    <>
+      {" "}
+      <WebPageSEO
+        path="/docs"
+        title="Home page"
+        description="Next.js boilerplate. you save hourse"
+        breadcrumbs={[
+          { name: "Home", item: `${process.env.NEXT_PUBLIC_APP_URL}/` },
+          { name: "About", item: `${process.env.NEXT_PUBLIC_APP_URL}/about` },
+        ]}
+      />
+      <div className="h-full bg-gradient-to-br from-black to-orange-700/10 flex flex-col overflow-hidden relative">
+        {/* Orange gradient overlay with reduced opacity on left side */}
+        <div className="flex-1 overflow-y-auto pl-10 py-8">
+          <div className="p-6 w-[70%]">
+            {selectedTopic ? (
+              <>
+                <div className="flex items-center gap-2 mb-4">
+                  {/* <FileText className="w-5 h-5 text-orange-400" /> */}
+                  <p className="text-lg font-medium text-white/70">Tutorial</p>
                 </div>
-              )}
-            </>
-          ) : (
-            <div className="flex flex-col items-center justify-center h-full text-center">
-              <FileText className="w-16 h-16 text-orange-400/30 mb-4" />
-              <h3 className="text-xl font-medium text-white mb-2">
-                Welcome to Tutorials
-              </h3>
-              <p className="text-base text-white max-w-md">
-                Select a topic from the navigation on the left to start
-                learning. Explore categories like Layout, Flexbox & Grid,
-                Typography, and more.
-              </p>
-            </div>
-          )}
+                {content ? (
+                  renderContent(content)
+                ) : (
+                  <div className="text-base text-white">
+                    Tutorial content for this topic is coming soon.
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full text-center">
+                <FileText className="w-16 h-16 text-orange-400/30 mb-4" />
+                <h3 className="text-xl font-medium text-white mb-2">
+                  Welcome to Tutorials
+                </h3>
+                <p className="text-base text-white max-w-md">
+                  Select a topic from the navigation on the left to start
+                  learning. Explore categories like Layout, Flexbox & Grid,
+                  Typography, and more.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

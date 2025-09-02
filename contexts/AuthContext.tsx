@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { User, Session, AuthError } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 
@@ -31,6 +31,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
+  // Prevent double init in React StrictMode (dev) and avoid duplicate fetches
+  const initializedRef = useRef(false);
+  const lastUserIdRef = useRef<string | null>(null);
 
   // Function to fetch user profile
   const fetchProfile = async (userId: string) => {
@@ -84,6 +87,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
+    if (initializedRef.current) return;
+    initializedRef.current = true;
     // Get initial session
     const getInitialSession = async () => {
       const {
@@ -94,12 +99,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(session?.user ?? null);
 
       if (session?.user) {
-        const userProfile = await fetchProfile(session.user.id);
-        if (!userProfile) {
-          const newProfile = await createProfile(session.user);
-          setProfile(newProfile);
-        } else {
-          setProfile(userProfile);
+        // Fetch only when user changed or no profile present
+        if (lastUserIdRef.current !== session.user.id || !profile) {
+          const userProfile = await fetchProfile(session.user.id);
+          if (!userProfile) {
+            const newProfile = await createProfile(session.user);
+            setProfile(newProfile);
+          } else {
+            setProfile(userProfile);
+          }
+          lastUserIdRef.current = session.user.id;
         }
       }
 
@@ -115,16 +124,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
 
+      // Ignore INITIAL_SESSION to avoid double work (we already handled initial load)
+      if (event === "INITIAL_SESSION") {
+        setLoading(false);
+        return;
+      }
+
       if (session?.user) {
-        const userProfile = await fetchProfile(session.user.id);
-        if (!userProfile) {
-          const newProfile = await createProfile(session.user);
-          setProfile(newProfile);
-        } else {
-          setProfile(userProfile);
+        // Only refetch if user changed
+        if (lastUserIdRef.current !== session.user.id) {
+          const userProfile = await fetchProfile(session.user.id);
+          if (!userProfile) {
+            const newProfile = await createProfile(session.user);
+            setProfile(newProfile);
+          } else {
+            setProfile(userProfile);
+          }
+          lastUserIdRef.current = session.user.id;
         }
       } else {
         setProfile(null);
+        lastUserIdRef.current = null;
       }
 
       setLoading(false);
