@@ -16,9 +16,7 @@ function PricingCardDemo() {
   const paymentStatus = usePaymentStatus();
   // Derive canMakePayment locally to avoid double-calling the hook
   const canMakePayment = !!user && paymentStatus.canMakePayment && !paymentStatus.isPaid;
-  const reason = !user
-    ? "Please log in to make a purchase"
-    : paymentStatus.isPaid
+  const reason = paymentStatus.isPaid
     ? "You already have an active subscription"
     : !paymentStatus.canMakePayment
     ? "Payment not available at this time"
@@ -27,10 +25,16 @@ function PricingCardDemo() {
   const [product, setProduct] = useState<LemonSqueezyProduct | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [shouldShowLoading, setShouldShowLoading] = useState(true);
+  const [guestEmail, setGuestEmail] = useState<string>("");
 
   // Helper function to format price (remove .00)
   const formatPrice = (price: string): string => {
     return price.replace(/\.00$/, "");
+  };
+
+  // Basic email validation for guest checkout
+  const isValidEmail = (email: string) => {
+    return /[^\s@]+@[^\s@]+\.[^\s@]+/.test(email);
   };
 
   // LemonSqueezy Product ID - Replace with your actual product ID
@@ -94,32 +98,34 @@ function PricingCardDemo() {
   }, [paymentStatus.isLoading, paymentStatus.tier]);
 
   const handleCheckout = async () => {
-    // If user is not logged in, redirect to login page
-    if (!user) {
-      window.location.href = "/auth/login?redirect=/#pricing";
-      return;
-    }
-
     if (!product) {
       setError("Product not loaded yet. Please try again.");
       return;
     }
 
-    // Check if user can make payment
-    if (!canMakePayment) {
-      setError(reason || "Unable to process payment at this time.");
-      return;
+    // Logged-in flow: respect existing payment gating
+    if (user) {
+      if (!canMakePayment) {
+        setError(reason || "Unable to process payment at this time.");
+        return;
+      }
+    } else {
+      // Guest flow: require a valid email
+      if (!isValidEmail(guestEmail)) {
+        setError("Please enter a valid email to continue as a guest.");
+        return;
+      }
     }
 
     setIsLoading(true);
     setError(null);
 
     try {
-      // Create checkout request with user information
+      // Create checkout request with user or guest information
       const checkoutRequest = {
         productId: PRODUCT_ID,
         userId: user?.id,
-        userEmail: user?.email || profile?.email,
+        userEmail: user?.email || profile?.email || guestEmail,
       };
 
       await LemonSqueezyService.checkoutAndRedirect(checkoutRequest);
@@ -203,6 +209,30 @@ function PricingCardDemo() {
           </div>
         </div>
 
+        {/* Guest Email (shown when not logged in) */}
+        {!user && (
+          <div className="mb-3">
+            <label className="block text-xs text-muted-foreground mb-1">
+              Email for receipt and account linking
+            </label>
+            <input
+              type="email"
+              value={guestEmail}
+              onChange={(e) => setGuestEmail(e.target.value)}
+              placeholder="you@example.com"
+              className={cn(
+                "w-full rounded-md border bg-background px-3 py-2 text-sm",
+                "focus:outline-none focus:ring-2 focus:ring-orange-500/60",
+                "placeholder:text-muted-foreground/70"
+              )}
+            />
+            <p className="mt-1 text-[10px] text-muted-foreground">
+              We'll send your receipt here. If you sign up later with this email,
+              your purchase will be linked automatically.
+            </p>
+          </div>
+        )}
+
         {/* Button */}
         {shouldShowLoading && paymentStatus.isLoading ? (
           <Button
@@ -231,16 +261,18 @@ function PricingCardDemo() {
               isLoading && "opacity-70 cursor-not-allowed"
             )}
             onClick={handleCheckout}
-            disabled={isLoading || !product}
+            disabled={
+              isLoading ||
+              !product ||
+              (!user && !isValidEmail(guestEmail))
+            }
           >
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Processing...
               </>
-            ) : !user ? (
-              "Get Indexo"
-            ) : !canMakePayment ? (
+            ) : user && !canMakePayment ? (
               "Already Purchased"
             ) : (
               "Get Indexo"
@@ -261,7 +293,7 @@ function PricingCardDemo() {
           </p>
         ) : !user ? (
           <p className="text-center text-muted-foreground text-xs">
-            Please log in to make a purchase
+            Guest checkout available — enter your email above to continue
           </p>
         ) : (
           <p className="text-center text-muted-foreground text-xs">

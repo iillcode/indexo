@@ -206,127 +206,411 @@ The system automatically protects routes listed in \`protected_routes\` when \`p
 
 `,
 
-  width: `# Width
+  "Centralized app configuration": `# Centralized  Application Configuration
 
-Utilities for setting the width of an element.
+Learn how to customize your application's settings using the centralized configuration system. This guide explains all the options available in the app config file. 🚀 
 
-## Fixed widths
 
-Use utilities like \`w-96\`, \`w-64\`, and \`w-48\` to set an element to a fixed width.
+## What is App Configuration?
 
-\`\`\`html
-<div class="w-96 ..."></div>
-<div class="w-80 ..."></div>
-<div class="w-72 ..."></div>
-<div class="w-64 ..."></div>
-<div class="w-60 ..."></div>
-<div class="w-56 ..."></div>
-<div class="w-52 ..."></div>
-<div class="w-48 ..."></div>
+The app configuration file (\`config/app-config.ts\`) is the central place where you manage all your application settings. Instead of hunting through multiple files, you can control key features from one location.
+
+
+## Configuration Sections 📂
+
+The configuration is organized into four main sections:
+
+1. **App Details** - Basic information about your application
+2. **Login Settings** - Authentication options
+3. **Routing** - Page access control
+4. **Theme** - Visual appearance settings
+
+
+
+## App Details Configuration ℹ️
+
+This section controls basic information about your application:
+
+\`\`\`typescript
+app_details: {
+  name: "Indexo",
+  description: "A Next.js boilerplate application with Supabase and Stripe integration",
+  version: "1.0.0",
+}
 \`\`\`
 
-## Fluid widths
 
-Use \`w-{fraction}\` or \`w-full\` to set an element to a percentage based width.
+### Customization Options:
+- **name**: Your application's name (appears in browser tab, SEO titles)
+- **description**: Brief description for SEO and social sharing
+- **version**: Current version of your application
 
-\`\`\`html
-<div class="flex ...">
-  <div class="w-1/2 ... ">w-1/2</div>
-  <div class="w-1/2 ... ">w-1/2</div>
-</div>
-<div class="flex ...">
-  <div class="w-2/5 ...">w-2/5</div>
-  <div class="w-3/5 ...">w-3/5</div>
-</div>
-<div class="w-1/3 ...">w-1/3</div>
-<div class="w-2/3 ...">w-2/3</div>
-<div class="w-1/4 ...">w-1/4</div>
-<div class="w-3/4 ...">w-3/4</div>
-<div class="w-1/5 ...">w-1/5</div>
-<div class="w-2/5 ...">w-2/5</div>
-<div class="w-3/5 ...">w-3/5</div>
-<div class="w-4/5 ...">w-4/5</div>
-<div class="w-1/6 ...">w-1/6</div>
-<div class="w-5/6 ...">w-5/6</div>
-<div class="w-full ...">w-full</div>
-\`\`\``,
 
-  height: `# Height
 
-Utilities for setting the height of an element.
+## Login Configuration 🔐
 
-## Fixed heights
+Control how users can access your application:
 
-Use utilities like \`h-96\`, \`h-64\`, and \`h-48\` to set an element to a fixed height.
-
-\`\`\`html
-<div class="h-96 ..."></div>
-<div class="h-80 ..."></div>
-<div class="h-72 ..."></div>
-<div class="h-64 ..."></div>
-<div class="h-60 ..."></div>
-<div class="h-56 ..."></div>
-<div class="h-52 ..."></div>
-<div class="h-48 ..."></div>
+\`\`\`typescript
+login: {
+  google_auth_enabled: true,
+  email_auth_enabled: true,
+  show_social_divider: true,
+}
 \`\`\`
 
-## Full height
+### Options Explained:
+- **google_auth_enabled**: Allow users to sign in with Google
+- **email_auth_enabled**: Allow users to sign in with email/password
+- **show_social_divider**: Show "Or sign in with" separator in login forms
 
-Use \`h-screen\` to make an element span the entire height of the viewport.
 
-\`\`\`html
-<div class="h-screen">
-  <!-- This div will be the full height of the screen -->
-</div>
+## Routing Configuration 🛣️
+
+Manage which pages require authentication:
+
+\`\`\`typescript
+routing: {
+  private_routes_enabled: true,
+  protected_routes: ["/dashboard", "/profile", "/pricing"],
+}
 \`\`\`
 
-## Dynamic heights
+### Key Settings:
+- **private_routes_enabled**: Turn on/off all route protection
+- **protected_routes**: List of pages that require login
 
-Use \`h-auto\` to let the browser determine the height for the element.
+To add a new private page like "/settings":
+\`\`\`typescript
+protected_routes: ["/dashboard", "/profile", "/pricing", "/settings"]
+  \`\`\`
 
-\`\`\`html
-<div class="h-auto ...">
-  <!-- Height will be determined by the content -->
-</div>
-\`\`\``,
 
-  "font-size": `# Font Size
+  ## Theme Configuration 🎨
 
-Utilities for controlling the font size of an element.
+  Control your application's visual appearance:
+  
+  \`\`\`typescript
+  theme: {
+    default_mode: "dark",
+    allow_user_toggle: true,
+    persist_to_local_storage: false,
+    brand: {
+      light: {
+        primary: "#101010",
+        primary_foreground: "#ffffff",
+        // ... other colors
+      },
+      dark: {
+        primary: "#60a5fa",
+        primary_foreground: "#0a0a0a",
+        // ... other colors
+      },
+    },
+  }
+  \`\`\`
+  
+### Theme Options:
+  - **default_mode**: Initial theme ("light", "dark", or "system")
+  - **allow_user_toggle**: Let users switch between light/dark mode
+  - **persist_to_local_storage**: Remember user's theme preference
+  - **brand**: Color schemes for light and dark modes
+  
+### Brand Colors:
+  Each mode (light/dark) has these color settings:
+  - **primary**: Main brand color
+  - **primary_foreground**: Text color on primary buttons
+  - **primary_hover**: Color when hovering over primary buttons
+  - **secondary**: Secondary color for less important elements
+  - **secondary_foreground**: Text color on secondary elements
+  
 
-## Usage
+  `,
+  "Payment integration": `# Stripe Payment Integration
 
-Control the font size of an element using the \`text-{size}\` utilities.
 
-\`\`\`html
-<p class="text-sm ...">The quick brown fox ...</p>
-<p class="text-base ...">The quick brown fox ...</p>
-<p class="text-lg ...">The quick brown fox ...</p>
-<p class="text-xl ...">The quick brown fox ...</p>
-<p class="text-2xl ...">The quick brown fox ...</p>
-<p class="text-3xl ...">The quick brown fox ...</p>
-<p class="text-4xl ...">The quick brown fox ...</p>
-<p class="text-5xl ...">The quick brown fox ...</p>
-<p class="text-6xl ...">The quick brown fox ...</p>
+Learn how to set up and use Stripe payments in your application. This guide covers everything from Stripe Dashboard setup to frontend implementation and backend customization. 🚀
+
+
+## Getting Started with Stripe 🎯
+
+### 1. Create a Stripe Account
+
+1. Visit [**Stripe.com**](*https://stripe.com*) and click "Start now"
+2. Complete the registration process
+3. Verify your email and phone number
+4. Complete the business verification process
+
+### 2. Access Your Stripe Dashboard
+
+1. Log in to your Stripe account
+2. Navigate to the Dashboard
+3. Familiarize yourself with the main sections:
+   - Payments
+   - Products
+   - Customers
+   - Balance
+   - Settings
+
+## Setting Up Products in Stripe 📦
+
+### 1. Create Your First Product
+
+1. In your Stripe Dashboard, go to **"Products"**
+2. Click **"Add product"**
+3. Enter product details:
+   - Product name (e.g., "Basic Plan")
+   - Description
+   - Price (e.g., $9.99/month)
+   - Billing period (monthly/yearly)
+
+### 2. Get Your Price ID
+
+1. After creating a product, you'll see its Price ID
+2. It looks like this: \`price_1S0wdPSgaKSlhaHpHHpuizBIN\`
+3. Save this ID for later use in your application
+
+
+## Environment Configuration ⚙️
+
+### 1. Find Your API Keys
+
+In your Stripe Dashboard:
+1. Go to **"Developers"** → **"API keys"**
+2. Find your:
+   - Publishable key (starts with \`pk_\`)
+   - Secret key (starts with \`sk_\`)
+
+### 2. Configure Environment Variables
+
+Update your \`.env.local\` file with your Stripe keys:
+
+\`\`\`env
+# Stripe Configuration
+STRIPE_SECRET_KEY=sk_test_your_secret_key_here
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_your_publishable_key_here
+STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret_here
 \`\`\`
 
-## Responsive Design
 
-To control the font size of an element at a specific breakpoint, add a \`{screen}:\` prefix to any existing font size utility.
 
-\`\`\`html
-<p class="text-base md:text-lg lg:text-xl">
-  The quick brown fox jumps over the lazy dog.
-</p>
+## Using the Payment Hook on Frontend 🪝
+
+### 1. Import the Payment Hook
+
+In your component file:
+
+\`\`\`typescript
+import { useCreatePaymentLink } from "@/hooks/useCreatePaymentLink";
 \`\`\`
 
-## Arbitrary values
+### 2. Use the Hook in Your Component
 
-If you need to use a one-off font size value that doesn't make sense to include in your theme, use square brackets to generate a property on the fly using any arbitrary value.
+\`\`\`typescript
+import { useCreatePaymentLink } from "@/hooks/useCreatePaymentLink";
+import { useAuth } from "@/lib/auth-context";
 
-\`\`\`html
-<p class="text-[14px]">
-  The quick brown fox jumps over the lazy dog.
-</p>
-\`\`\``,
+export default function PricingPage() {
+  const { createPaymentLink, loading, error } = useCreatePaymentLink();
+  const { user } = useAuth();
+
+  const handleSubscribe = async (planId) => {
+    // Create payment link with user details
+    const result = await createPaymentLink({
+      planId: planId,
+      metadata: {
+        userId: user?.id,
+        userEmail: user?.email,
+      }
+    });
+
+    // Redirect to Stripe payment page
+    if (result?.url) {
+      window.location.href = result.url;
+    }
+  };
+
+  return (
+    <div>
+      {/* Pricing plans */}
+      <button onClick={() => handleSubscribe("basic")}>
+        Subscribe to Basic Plan
+      </button>
+      
+      {error && <p>Error: {error}</p>}
+    </div>
+  );
+}
+\`\`\`
+
+
+
+### 3. Hook Return Values
+
+The hook provides:
+- \`createPaymentLink\`: Function to create a payment link
+- \`loading\`: Boolean indicating if request is in progress
+- \`error\`: Error message if something goes wrong
+
+## Customizing Backend Personal Details 🛠️
+
+### 1. Update Plan Details
+
+In \`app/api/stripe/create-link/route.ts\`, modify the \`getPlanDetails\` function:
+
+\`\`\`typescript
+async function getPlanDetails(planId: string) {
+  // Update with your actual plan IDs from Stripe
+  const plans = {
+    basic: { 
+      stripePriceId: "price_your_basic_plan_id", 
+      name: "Basic Plan" 
+    },
+    pro: { 
+      stripePriceId: "price_your_pro_plan_id", 
+      name: "Pro Plan" 
+    },
+    enterprise: { 
+      stripePriceId: "price_your_enterprise_plan_id", 
+      name: "Enterprise Plan" 
+    },
+  };
+  return plans[planId as keyof typeof plans];
+}
+\`\`\`
+
+`,
+  Authentications: `# Authentications
+ Learn how to implement authentication in your application using both frontend and backend systems. This guide covers everything from basic login to protecting API routes. 🚀
+  
+ 
+## Frontend Authentication 🖥️
+
+### 1. Understanding the Auth Context
+
+The frontend authentication system uses React Context to manage user state across your application. The \`useAuth()\` hook provides all the functions you need:
+
+
+\`\`\`typescript
+import { useAuth } from "@/lib/auth-context";
+
+const MyComponent = () => {
+  const { user, loading, signIn, signUp, signOut, resetPassword } = useAuth();
+  
+  // user: Current user object (null if not logged in)
+  // loading: Boolean indicating if auth state is loading
+  // signIn: Function to sign in a user
+  // signUp: Function to create a new user
+  // signOut: Function to log out
+  // resetPassword: Function to send password reset email
+};
+\`\`\`
+
+
+
+## 2. Protecting Pages with Authentication
+
+Use the \`withAuth\` higher-order component to protect pages:
+
+\`\`\`typescript
+"use client";
+
+import { useEffect } from "react";
+import { useAuth } from "@/lib/auth-context";
+
+export default function DashboardPage() {
+  const { user, loading } = useAuth();
+
+  useEffect(() => {
+    // Redirect to login if user is not authenticated
+    if (!user && !loading) {
+      window.location.href = "/login";
+    }
+  }, [user, loading]);
+
+  // Show loading state while checking auth
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  // If user is not authenticated, don't render content
+  if (!user) {
+    return null;
+  }
+
+  // Render protected content
+  return (
+    <div>
+      <h1>Dashboard</h1>
+      <p>This page is only visible to authenticated users.</p>
+    </div>
+  );
+}
+\`\`\`
+
+
+
+## Backend Authentication 🔐
+
+### 1. Understanding withAuthRequired
+
+The backend authentication system uses \`withAuthRequired\` to protect API routes. This function ensures only authenticated users can access your API endpoints:
+
+\`\`\`typescript
+import { withAuthRequired } from "@/lib/auth/withAuth";
+
+export const GET = withAuthRequired(async (req, { session }) => {
+  // session contains user information
+  const userId = session.user.id;
+  
+  // Your API logic here
+  return NextResponse.json({ userId });
+});
+\`\`\`
+
+
+### 2. Protecting API Routes
+
+Create a protected API route:
+
+\`\`\`typescript
+// app/api/user/profile/route.ts
+import { NextResponse } from "next/server";
+import { withAuthRequired } from "@/lib/auth/withAuth";
+
+export const GET = withAuthRequired(async (req, { session }) => {
+  // Only authenticated users can access this
+  const userId = session.user.id;
+  const userEmail = session.user.email;
+
+  // Fetch user profile data
+  const profile = {
+    id: userId,
+    email: userEmail,
+    // ... other profile data
+  };
+
+  return NextResponse.json({ profile });
+});
+
+export const PUT = withAuthRequired(async (req, { session }) => {
+  // Only authenticated users can update their profile
+  const userId = session.user.id;
+  const body = await req.json();
+
+  // Update user profile logic
+  // ... update database
+
+  return NextResponse.json({ success: true });
+});
+\`\`\`
+
+## Key Benefits of the Authentication System ⭐
+
+- **Full-Stack Authentication**
+- **Multiple Authentication Methods**
+- **Flexible Route Protection**
+- **Developer-Friendly APIs**
+- **Production-Ready Security**
+`,
 };

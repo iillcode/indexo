@@ -286,9 +286,19 @@ async function handleLemonSqueezyOrderCreated(supabase: any, orderData: any) {
     const order = orderData.attributes;
     const firstOrderItem = order.first_order_item;
 
-    // Try to find user by email lookup
-    let userId = null;
-    if (order.user_email) {
+    // Prefer explicit user_id passed via checkout custom data, then fall back to email lookup
+    let userId: string | null = null;
+
+    // Attempt to extract a custom user_id from various possible locations
+    const possibleCustom = (order as any)?.custom || order?.metadata?.custom ||
+      (order as any)?.checkout_data?.custom;
+    const customUserId = possibleCustom?.user_id || order?.metadata?.user_id;
+
+    if (customUserId && typeof customUserId === "string") {
+      userId = customUserId;
+      console.log(`Using custom user_id from checkout metadata: ${userId}`);
+    } else if (order.user_email) {
+      // Fallback: Try to find user by email lookup
       try {
         const { data: userLookup, error: lookupError } = await supabase.rpc(
           "lookup_user_by_email",
@@ -353,6 +363,8 @@ async function handleLemonSqueezyOrderCreated(supabase: any, orderData: any) {
         relationships: orderData.relationships,
         user_lookup_attempted: true,
         user_found: userId !== null,
+        custom_user_id_in_payload: Boolean(customUserId),
+        custom_payload: possibleCustom || null,
       },
       created_at: order.created_at,
       updated_at: order.updated_at,
@@ -387,8 +399,13 @@ async function handleLemonSqueezyOrderCreated(supabase: any, orderData: any) {
         amount: order.total / 100, // Convert from cents
         currency: order.currency,
         status: "completed",
-        expiryType: "never", // Assuming one-time payment
+        expiryType: "one_time", // Assuming one-time payment
       });
+    }
+    
+    // If no user was found but payment is completed, log this for future linking
+    if (!userId && order.status === "paid" && order.user_email) {
+      console.log(`Payment completed for ${order.user_email} but no user found. Will link when user registers.`);
     }
   } catch (error) {
     console.error("Error in handleLemonSqueezyOrderCreated:", error);

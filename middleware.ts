@@ -7,7 +7,14 @@ export async function middleware(request: NextRequest) {
   const pathname = url.pathname;
 
   // Define route categories
-  const publicRoutes = ["/", "/auth/login", "/auth/register", "/auth/callback"];
+  const publicRoutes = [
+    "/",
+    "/auth/login",
+    "/auth/register",
+    "/auth/callback",
+    // Allow guest checkout API endpoints
+    "/api/lemonsqueezy",
+  ];
   const authRoutes = ["/auth/login", "/auth/register"];
   const protectedRoutes = ["/docs", "/profile", "/settings", "/billing"];
 
